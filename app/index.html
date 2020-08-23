@@ -2,25 +2,20 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Valid HTML Template</title>
-	<style>
-		body{
-			background: #81bcf7;
-			color: #123456;
-		}
-	</style>
+	<title>Processing.js Laboratory</title>
+	<link rel="stylesheet" href="https://unpkg.com/jquery.terminal@2.x.x/css/jquery.terminal.min.css">
 	<link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
-	<h1>Web App Template</h1>
-	<p>The scaffolding tools have become unusable, so I'm building my own starting template.</p>
-	<div>
-		<ul>
-			<li>build tool: Grunt</li>
-			<li>dev server: grunt serve</li>
-			<li>npm and bower for packages</li>
-		</ul>
-	</div>
+	<canvas id="canvas"></canvas>
+	<div id="console"></div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+    <script src="https://unpkg.com/jquery.terminal@2.x.x/js/jquery.terminal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js"></script>
+	<script src="scripts/commandRegistry.js"></script>
+	<script src="scripts/demos.js"></script>
+	<script src="scripts/Processor.js"></script>
 	<script src="scripts/main.js"></script>
 </body>
 </html>
