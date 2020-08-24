@@ -1,4 +1,5 @@
 function Processor(){
+	var canvas;
 	var processing;
 	var pjs;
 	var properties = {};
@@ -37,6 +38,7 @@ function Processor(){
 		},
 		'init': {
 			value: function(canvas){
+				this.canvas = canvas;
 				processing = new Processing(canvas, function(processingjs){
 					pjs = processingjs;
 					var instance = Processor.instance;

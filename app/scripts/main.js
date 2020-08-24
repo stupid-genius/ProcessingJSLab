@@ -7,6 +7,13 @@ Function.prototype.bind = function(){
 	}; 
 };
 
+function random(min, max){
+	return (max-min)*Math.random() + min;
+}
+function randInt(min, max){
+	return Math.round((max-min)*Math.random()) + min;
+}
+
 var processor = new Processor();
 var windowHeight = $(window).height();
 processor.setProperty('canvasWidth', windowHeight);
