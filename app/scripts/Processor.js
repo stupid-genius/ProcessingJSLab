@@ -65,9 +65,8 @@ function Processor(){
 									pjs.noLoop();
 									break;
 								case pjs.LEFT:
-									//pjs.save('image.png');
+									pjs.save('image.png');
 								case pjs.RIGHT:
-								default:
 									pjs.redraw();
 							}
 						}

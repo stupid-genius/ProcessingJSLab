@@ -1,7 +1,191 @@
 var demos = {
+	'ants': function(){
+	},
 	'boids': function(){
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+		var pjs = this.getProcessing();
+		var ddx = 0;
+		var ddy = 0;
+		var dddx = 0;
+		var dddy = 0;
+		var ps = new ParticleJS(pjs, function(){
+			dddx = random(-1, 1);
+			dddy = random(-1, 1);
+			ddx+=dddx;
+			ddy+=dddy;
+			this.dx+=ddx;
+			this.dy+=ddy;
+			this.x+=this.dx;
+			this.y+=this.dy;
+			if(this.x>=canvasWidth-1){
+				this.x=canvasWidth-1;
+				this.dx*=-1;
+			}else if(this.x<0){
+				this.x=0;
+				this.dx*=-1;
+			}
+			if(this.y>=canvasHeight-1){
+				this.y=canvasHeight-1;
+				this.dy*=-1;
+			}else if(this.y<0){
+				this.y=0;
+				this.dy*=-1;
+			}
+		});
+		// ttl, x, y, dx, dy, r, g, b, a
+		ps.createParticle(0, canvasWidth/2, canvasHeight/2, .5, .5, 255, 255, 255, 255);
+
+		pjs.stroke(0, 0, 0, 255);
+		this.draw = function(){
+			pjs.background(0);
+			ps.render();
+		};
+		pjs.loop();
+	},
+	'bz': function(){
+		var pjs = this.getProcessing();
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+
+		var controls = Array.apply(null, Array(8)).map(function(){
+			return Math.random()*canvasWidth;
+		});
+		var controls2 = Array.apply(null, Array(8)).map(function(){
+			return Math.random()*canvasWidth;
+		});
+		var velocities = Array.apply(null, Array(8)).map(function(){
+			return Math.random()*15;
+		});
+		pjs.background(255);
+		pjs.noFill();
+		this.draw = function(){
+			pjs.stroke(0, 0, 0, 10);
+			controls.map(function(e, i, a){
+				var newPos = e+velocities[i];
+				if(newPos < 0){
+					newPos = 0;
+					velocities[i] *= -1;
+				}else if(newPos > canvasWidth){
+					newPos = canvasWidth;
+					velocities[i] *= -1;
+				}
+				a[i] = newPos;
+			});
+			pjs.bezier.apply(null, controls);
+			pjs.stroke(255, 128, 128, 10);
+			controls2.map(function(e, i, a){
+				var newPos = e+velocities[i];
+				if(newPos < 0){
+					newPos = 0;
+					velocities[i] *= -1;
+				}else if(newPos > canvasWidth){
+					newPos = canvasWidth;
+					velocities[i] *= -1;
+				}
+				a[i] = newPos;
+			});
+			pjs.bezier.apply(null, controls2);
+		};
+		pjs.loop();
 	},
 	'chaos': function(){
+		var args = [].slice.call(arguments);
+		var pjs = this.getProcessing();
+		var canvasWidth = +this.getProperty('canvasWidth');
+		var canvasHeight = +this.getProperty('canvasHeight');
+		var xCenter = canvasWidth/2;
+		var yCenter = canvasHeight/2;
+		var radius = xCenter-50;
+		var toRad = Math.PI/180;
+
+		// f = 2
+		var attractors = [
+			{
+				x: canvasWidth/2,
+				y: 50
+			},
+			{
+				x: 50,
+				y: canvasHeight-50
+			},
+			{
+				x: canvasWidth-50,
+				y: canvasHeight-50
+			}
+		];
+		// simplex-5
+		// f = 1.5
+		var attractors5 = [
+			{
+				x: canvasWidth-50,
+				y: 50
+			},
+			{
+				x: 50,
+				y: 50
+			},
+			{
+				x: 50,
+				y: canvasHeight-50
+			},
+			{
+				x: canvasWidth-50,
+				y: canvasHeight-50
+			},
+			{
+				x: xCenter,
+				y: yCenter
+			}
+		];
+		// simplex-6
+		// f = 1.5
+		var attractors6 = [
+			{
+				x: Math.cos(0)*radius + xCenter,
+				y: Math.sin(0)*radius + yCenter
+			},
+			{
+				x: Math.cos(60*toRad)*radius + xCenter,
+				y: Math.sin(60*toRad)*radius + yCenter
+			},
+			{
+				x: Math.cos(120*toRad)*radius + xCenter,
+				y: Math.sin(120*toRad)*radius + yCenter
+			},
+			{
+				x: Math.cos(180*toRad)*radius + xCenter,
+				y: Math.sin(180*toRad)*radius + yCenter
+			},
+			{
+				x: Math.cos(240*toRad)*radius + xCenter,
+				y: Math.sin(240*toRad)*radius + yCenter
+			},
+			{
+				x: Math.cos(300*toRad)*radius + xCenter,
+				y: Math.sin(300*toRad)*radius + yCenter
+			}
+		];
+		function roll(d){
+			return Math.floor(d*Math.random());
+		}
+
+		pjs.background(0);
+		pjs.stroke(255,255,255,255);
+		for(var a in attractors){
+			pjs.point(attractors[a].x, attractors[a].y);
+		}
+
+		var x = Math.random()*canvasWidth;
+		var y = Math.random()*canvasHeight;
+		var f = 2;
+		this.draw = function(){
+			var a = roll(attractors.length);
+			x += (attractors[a].x - x)/f;
+			y += (attractors[a].y - y)/f;
+			pjs.point(x, y);
+		};
+		pjs.loop();
 	},
 	'fire': function(){
 		var pjs = this.getProcessing();
@@ -69,36 +253,41 @@ var demos = {
 			this.a = 255*Math.pow(t, 0.2);
 
 			// check
-			if(this.x>=canvasWidth){
-				this.x=canvasWidth;
+			if(this.x>=canvasWidth-1){
+				this.x=canvasWidth-1;
 				this.dx*=-1;
-			}
-			if(this.x<0){
+			}else if(this.x<0){
 				this.x=0;
 				this.dx*=-1;
 			}
 			// bounce
-			if(this.y>=canvasHeight){
-				this.y=canvasHeight;
-				this.dy*=-1*ps.elasticity;
+			if(this.y>=canvasHeight-2){
+				if(this.dy<0.25){
+					this.y=canvasHeight-1;
+				}else{
+					this.y=canvasHeight-2;
+				}
+				this.dy*=-1.2*Math.random()*ps.elasticity;
 				if(Math.random()<0.5){
 					this.dx-=this.dy;
 				}else{
 					this.dx+=this.dy;
 				}
-			}
-			if(this.y<0){
+			}else if(this.y<0){
 				this.y=0;
 				this.dy*=-1*ps.elasticity;
+			}
+			if(this.y===canvasHeight-1){
+				this.active = false;
 			}
 		});
 
 		this.draw = function(){
 			pjs.background(0);
 			for(var i=0; i<15; ++i){
-				// ttl, x, y, dx, dy, r, g, b, a
 				var theta = random(-0.098, 0.098);
-				var r = random(-13, -10);
+				var r = random(-15, -10);
+				// ttl, x, y, dx, dy, r, g, b, a
 				ps.createParticle(random(100, 400), canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, 0, 0, 0, 0);
 			}
 			ps.render();
@@ -175,6 +364,26 @@ var demos = {
 		pjs.noLoop();
 	},
 	'snow': function(){
+		var pjs = this.getProcessing();
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+		var pjs = this.getProcessing();
+		var ps = new ParticleJS(pjs, function(){
+			this.x+=this.dx;
+			this.y+=this.dy;
+			if(this.x>=canvasWidth-1
+				|| this.y>=canvasHeight-1 || this.y<0){
+				this.active = false;
+			}
+		});
+
+		this.draw = function(){
+			pjs.background(0);
+			// ttl, x, y, dx, dy, r, g, b, a
+			ps.createParticle(0, random(-canvasWidth/2, canvasWidth-1), 0, random(0, 0.25), random(0.4, 0.6), 255, 255, 255, random(128, 255));
+			ps.render();
+		};
+		pjs.loop();
 	}
 };
 

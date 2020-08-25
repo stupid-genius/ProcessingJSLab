@@ -22,6 +22,16 @@ processor.init($('#canvas')[0]);
 
 $('#console').width($(window).width()-windowHeight);
 var terminal = $('#console').terminal(commands, {
+	checkArity: false,
 	prompt: '> ',
 	greetings: 'Processing.js Lab'
 });
+
+window.onresize = function(){
+	windowHeight = $(window).height();
+	processor.setProperty('canvasWidth', windowHeight);
+	processor.setProperty('canvasHeight', windowHeight);
+	processor.init($('#canvas')[0]);
+
+	$('#console').width($(window).width()-windowHeight);
+};

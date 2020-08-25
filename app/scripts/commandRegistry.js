@@ -7,7 +7,9 @@ var commands = {
 		}
 	},
 	'load': function(demoName){
-		demos[demoName].bind(processor)();
+		var args = [].slice.call(arguments);
+		args.shift();
+		demos[demoName].bind(processor, args)();
 	},
 	'ls': function(){
 		this.echo('Available demos:');

@@ -45,26 +45,25 @@ function ParticleJS(pjs, fn){
 					pjs.stroke(cur.r, cur.g, cur.b, cur.a);
 					pjs.point(cur.x, cur.y);
 
-					var p;
-					if(++cur.t>=cur.ttl){
+					var dead = cur;
+					if(cur.ttl>0 && ++cur.t>=cur.ttl){
 						cur.active = false;
-						p = cur;
 					}
 					cur = cur.next;
 					// if we're at the end, no need to unlink
 					if(cur === head){
 						break;
 					}
-					if(p){	// move p to end of list
-						if(p===head){
-							head = p.next;
+					if(!dead.active){	// move p to end of list
+						if(dead===head){
+							head = dead.next;
 						}else{
-							p.next.prev = p.prev;
-							p.prev.next = p.next;
-							p.next = head;
-							p.prev = head.prev;
-							head.prev.next = p;
-							head.prev = p;
+							dead.next.prev = dead.prev;
+							dead.prev.next = dead.next;
+							dead.next = head;
+							dead.prev = head.prev;
+							head.prev.next = dead;
+							head.prev = dead;
 						}
 					}
 				}
