@@ -17,5 +17,15 @@ var commands = {
 		for(var demo in cmds){
 			this.echo(cmds[demo]);
 		}
+	},
+	'man': function(cmd){
+		return pages[cmd];
 	}
+};
+
+var pages = {
+	'help': 'Lists all commands',
+	'load': 'Run a demo',
+	'ls': 'Lists all demos',
+	'man': 'Echoes the help text for the given command (the current command)'
 };

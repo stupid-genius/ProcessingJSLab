@@ -60,7 +60,7 @@ var demos = {
 		pjs.background(255);
 		pjs.noFill();
 		this.draw = function(){
-			pjs.stroke(0, 0, 0, 10);
+			pjs.stroke(0, 0, 0, 20);
 			controls.map(function(e, i, a){
 				var newPos = e+velocities[i];
 				if(newPos < 0){
@@ -73,7 +73,7 @@ var demos = {
 				a[i] = newPos;
 			});
 			pjs.bezier.apply(null, controls);
-			pjs.stroke(255, 128, 128, 10);
+			pjs.stroke(255, 128, 128, 20);
 			controls2.map(function(e, i, a){
 				var newPos = e+velocities[i];
 				if(newPos < 0){
@@ -234,6 +234,122 @@ var demos = {
 		};
 		pjs.loop();
 	},
+	'fireworks': function(){
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+		var pjs = this.getProcessing();
+		var red = new ParticleJS(pjs, function(){
+			// update
+			this.dx+=red.acceleration[0];
+			this.dy+=red.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			var t = 1-(this.t/this.ttl);
+			this.r = 255*Math.pow(t, 0.2);
+			this.g = 255*t*t;
+			this.b = 255*t*t*t*t;
+			this.a = 255*t;
+		});
+		var blue = new ParticleJS(pjs, function(){
+			// update
+			this.dx+=blue.acceleration[0];
+			this.dy+=blue.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			var t = 1-(this.t/this.ttl);
+			this.b = 255*Math.pow(t, 0.2);
+			this.g = 255*t*t;
+			this.r = 255*t*t*t*t;
+			this.a = 255*t;
+		});
+		var green = new ParticleJS(pjs, function(){
+			// update
+			this.dx+=green.acceleration[0];
+			this.dy+=green.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			var t = 1-(this.t/this.ttl);
+			this.g = 255*Math.pow(t, 0.2);
+			this.r = 255*t*t;
+			this.b = 255*t*t*t*t;
+			this.a = 255*t;
+		});
+		var yellow = new ParticleJS(pjs, function(){
+			// update
+			this.dx+=yellow.acceleration[0];
+			this.dy+=yellow.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			var t = 1-(this.t/this.ttl);
+			this.r = 255*Math.pow(t, 0.2);
+			this.g = 255*Math.pow(t, 0.2);
+			this.b = 255*t*t;
+			this.a = 255*t;
+		});
+		var purple = new ParticleJS(pjs, function(){
+			// update
+			this.dx+=purple.acceleration[0];
+			this.dy+=purple.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			var t = 1-(this.t/this.ttl);
+			this.r = 255*Math.pow(t, 0.2);
+			this.b = 255*t*t;
+			this.g = 255*t*t*t*t;
+			this.a = 255*t;
+		});
+		red.acceleration = [0, 0.15];
+		blue.acceleration = [0, 0.15];
+		green.acceleration = [0, 0.15];
+		yellow.acceleration = [0, 0.15];
+		purple.acceleration = [0, 0.15];
+
+		function explode(x, y){
+			var ps;
+			switch(randInt(0,4)){
+				case 0:
+					ps = red;
+					break;
+				case 1:
+					ps = blue;
+					break;
+				case 2:
+					ps = green;
+					break;
+				case 3:
+					ps = yellow;
+					break;
+				case 4:
+					ps = purple;
+					break;
+			}
+			for(var i=0; i<300; ++i){
+				var theta = random(0, Math.PI*2);
+				var force = random(0, 10);
+				ps.createParticle(random(50, 100), x, y, Math.cos(theta)*force, Math.sin(theta)*force, 0, 0, 0, 0);
+			}
+		}
+
+		var x = canvasWidth/2;
+		var y = canvasHeight/2;
+		this.draw = function(){
+			pjs.background(0);
+			if(Math.random()>0.95){
+				explode(random(0, canvasWidth), random(0, canvasHeight/2));
+			}
+			red.render();
+			blue.render();
+			green.render();
+			yellow.render();
+			purple.render();
+		};
+		pjs.loop();
+	},
 	'fountain': function(){
 		var canvasWidth = this.getProperty('canvasWidth');
 		var canvasHeight = this.getProperty('canvasHeight');
@@ -247,7 +363,6 @@ var demos = {
 
 			var t = 1-(this.t/this.ttl);
 			this.r = 255*Math.pow(t, 0.2);
-			//this.g = 255*Math.log10(10*t);
 			this.g = 255*t*t;
 			this.b = 255*t*t*t*t;
 			this.a = 255*Math.pow(t, 0.2);
@@ -288,7 +403,7 @@ var demos = {
 				var theta = random(-0.098, 0.098);
 				var r = random(-15, -10);
 				// ttl, x, y, dx, dy, r, g, b, a
-				ps.createParticle(random(100, 400), canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, 0, 0, 0, 0);
+				ps.createParticle(random(100, 500), canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, 0, 0, 0, 0);
 			}
 			ps.render();
 		};
@@ -363,8 +478,18 @@ var demos = {
 		pjs.background(bg);
 		pjs.noLoop();
 	},
-	'snow': function(){
+	'plasma': function(){
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
 		var pjs = this.getProcessing();
+		var ps = new ParticleJS(pjs, function(){
+		});
+
+		this.draw = function(){
+		};
+		pjs.loop();
+	},
+	'snow': function(){
 		var canvasWidth = this.getProperty('canvasWidth');
 		var canvasHeight = this.getProperty('canvasHeight');
 		var pjs = this.getProcessing();

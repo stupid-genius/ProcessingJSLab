@@ -54,7 +54,7 @@ function ParticleJS(pjs, fn){
 					if(cur === head){
 						break;
 					}
-					if(!dead.active){	// move p to end of list
+					if(!dead.active){	// move dead particle to end of list
 						if(dead===head){
 							head = dead.next;
 						}else{

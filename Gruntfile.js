@@ -27,6 +27,28 @@ module.exports = function(grunt){
                     ]
                 }
             }
+        },
+        copy: {
+            build:{
+                files: [
+                    {
+                        expand: true,
+                        cwd: 'app',
+                        dest: 'build/',
+                        src: [
+                            'styles/**',
+                            'scripts/**',
+							'**'
+                        ]
+                    },
+                    {
+                        expand: true,
+                        cwd: 'app/pages',
+                        dest: 'build/',
+                        src: '*.html'
+                    }
+                ]
+            }
         }
 	});
 
@@ -38,7 +60,6 @@ module.exports = function(grunt){
     });
     grunt.registerTask('build', 'create build', function(){
         grunt.task.run([
-            'markdown',
             'copy'
         ]);
     });
