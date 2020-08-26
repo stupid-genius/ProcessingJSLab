@@ -434,11 +434,12 @@ var demos = {
 		});
 		//ps.MAX_COUNT = 10000;
 
+		var force = -canvasHeight*0.02;
 		this.draw = function(){
 			pjs.background(0);
 			for(var i=0; i<15; ++i){
 				var theta = random(-0.098, 0.098);
-				var r = random(-20, -14);
+				var r = random(force, 0.8*force);
 				// ttl, x, y, dx, dy, r, g, b, a
 				ps.createParticle(random(10, 30)*-r, canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, 0, 0, 0, 0);
 			}
