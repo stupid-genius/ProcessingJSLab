@@ -1,9 +1,13 @@
 var commands = {
-	'help': function(){
-		this.echo('Available commands:');
-		var cmds = Object.keys(commands);
-		for(var cmd in cmds){
-			this.echo(cmds[cmd]);
+	'help': function(cmd){
+		if(cmd===undefined){
+			this.echo('Available commands:');
+			var cmds = Object.keys(commands);
+			for(var cmd in cmds){
+				this.echo(cmds[cmd]);
+			}
+		}else{
+			return pages[cmd];
 		}
 	},
 	'load': function(demoName){
@@ -17,15 +21,11 @@ var commands = {
 		for(var demo in cmds){
 			this.echo(cmds[demo]);
 		}
-	},
-	'man': function(cmd){
-		return pages[cmd];
 	}
 };
 
 var pages = {
-	'help': 'Lists all commands',
-	'load': 'Run a demo',
+	'help': 'Lists all commands; usage: help <command>',
+	'load': 'Run a demo; usage: load <demo>',
 	'ls': 'Lists all demos',
-	'man': 'Echoes the help text for the given command (the current command)'
 };
