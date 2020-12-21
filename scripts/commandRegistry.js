@@ -1,4 +1,7 @@
 var commands = {
+	'get': function(prop){
+		return processor.getProperty(prop);
+	},
 	'help': function(cmd){
 		if(cmd===undefined){
 			this.echo('Available commands:');
