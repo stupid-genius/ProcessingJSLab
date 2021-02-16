@@ -448,6 +448,57 @@ var demos = {
 		pjs.loop();
 	},
 	'latice': function(){
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+		var pjs = this.getProcessing();
+		var ps = new ParticleJS(pjs, function(){
+			//update
+			this.dx+=ps.acceleration[0];
+			this.dy+=ps.acceleration[1];
+			this.x+=this.dx;
+			this.y+=this.dy;
+
+			// check
+			if(this.x>=canvasWidth-1){
+				this.x=canvasWidth-1;
+				this.dx*=-1*ps.elasticity;
+			}else if(this.x<0){
+				this.x=0;
+				this.dx*=-1*ps.elasticity;
+			}
+			// bounce
+			if(this.y>=canvasHeight-1){
+				this.y=canvasHeight-2;
+				this.dy*=-1*ps.elasticity*random(0.5, 1);
+				this.dx*=1*random(0.86, 1);
+			}else if(this.y<0){
+				this.y=0;
+				this.dy*=-1*ps.elasticity;
+			}
+			// collision
+			var cur = this.next;
+			while(cur.active){
+				if(cur === this){
+					break;
+				}
+				if(distance(this.x, this.y, cur.x, cur.y) < 5){
+				}
+				cur = cur.next;
+			}
+
+			if(Math.abs(this.dx)<0.2){
+				this.active = false;
+			}
+		});
+		ps.acceleration = [0, 0.75];
+		ps.elasticity = 0.33;
+		//ps.MAX_COUNT = 100;
+		this.draw = function(){
+			pjs.background(0);
+			ps.createParticle(0, 0, 0, random(0.1, 20), random(0, 1), 255, 255, 255, 255);
+			ps.render();
+		};
+		pjs.loop();
 	},
 	'lens': function(){
 		var canvasWidth = this.getProperty('canvasWidth');
@@ -618,30 +669,32 @@ var demos = {
 		var centerY = canvasHeight/2;
 		var pjs = this.getProcessing();
 		var ps = new ParticleJS(pjs, function(){
-			++this.t;
 			this.x+=this.dx;
 			this.y+=this.dy;
-			if(this.x>=canvasWidth-1
-				|| this.y>=canvasHeight-1 || this.x<0 || this.y<0){
+			if(this.x>=canvasWidth-1 || this.y>=canvasHeight-1
+					|| this.x<0 || this.y<0){
 				this.active = false;
 			}
 			var vel = Math.sqrt((this.dx*this.dx)+(this.dy*this.dy));
 			var dist = Math.min(distance(this.x, this.y, centerX, centerY), centerX);
-			this.a=128*(1-(dist/centerX))+(255*((vel)/6)*(this.t/50));
+			this.a = (64*(1-(dist/centerX))) + (255*(vel*this.t/centerX)) + (64*(vel/6));
 		});
 		this.draw = function(){
 			pjs.background(0);
-			for(var i=0; i<10; ++i){
+			for(var i=0; i<20; ++i){
 				// ttl, x, y, dx, dy, r, g, b, a
 				var x = random(0, canvasWidth);
 				var y = random(0, canvasHeight);
+				//x=(x+random(0, canvasWidth))/2;
+				//y=(y+random(0, canvasHeight))/2;
 				var dist = Math.min(distance(x, y, centerX, centerY), centerX);
 				var theta = -Math.atan((centerY-y)/(x-centerX));
 				if(x<centerX){
 					theta+=Math.PI;
 				}
-				var force = random(1, 6);
-				ps.createParticle(0, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
+				//var force = random(1, 6);
+				var force = 5*(1-(dist/centerX))+1;
+				ps.createParticle(120, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
 			}
 			ps.render();
 		};
