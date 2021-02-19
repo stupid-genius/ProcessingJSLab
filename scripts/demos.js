@@ -667,6 +667,7 @@ var demos = {
 		var canvasHeight = this.getProperty('canvasHeight');
 		var centerX = canvasWidth/2;
 		var centerY = canvasHeight/2;
+		var penumbra = centerX*0.75;
 		var pjs = this.getProcessing();
 		var ps = new ParticleJS(pjs, function(){
 			this.x+=this.dx;
@@ -677,7 +678,8 @@ var demos = {
 			}
 			var vel = Math.sqrt((this.dx*this.dx)+(this.dy*this.dy));
 			var dist = Math.min(distance(this.x, this.y, centerX, centerY), centerX);
-			this.a = (64*(1-(dist/centerX))) + (255*(vel*this.t/centerX)) + (64*(vel/6));
+			this.a = (64*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra)) + (64*(vel/6));
+			//this.a = (128*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra));
 		});
 		this.draw = function(){
 			pjs.background(0);
@@ -685,8 +687,8 @@ var demos = {
 				// ttl, x, y, dx, dy, r, g, b, a
 				var x = random(0, canvasWidth);
 				var y = random(0, canvasHeight);
-				//x=(x+random(0, canvasWidth))/2;
-				//y=(y+random(0, canvasHeight))/2;
+				x=(x+random(0, canvasWidth))/2;
+				y=(y+random(0, canvasHeight))/2;
 				var dist = Math.min(distance(x, y, centerX, centerY), centerX);
 				var theta = -Math.atan((centerY-y)/(x-centerX));
 				if(x<centerX){
@@ -694,7 +696,8 @@ var demos = {
 				}
 				//var force = random(1, 6);
 				var force = 5*(1-(dist/centerX))+1;
-				ps.createParticle(120, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
+				//ps.createParticle(180*(1-(force/6)), x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
+				ps.createParticle(0, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
 			}
 			ps.render();
 		};
