@@ -557,6 +557,96 @@ var demos = {
 		pjs.loop();
 	},
 	'life': function(){
+		/*
+		 *  Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+		 *	Any live cell with two or three live neighbours lives on to the next generation.
+		 *	Any live cell with more than three live neighbours dies, as if by overpopulation.
+		 *	Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+		 */
+		var pjs = this.getProcessing();
+		pjs.frameRate(12);
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+
+		const density = 0.05;
+		const cur=0, next=1, ALIVE=1, DEAD=0, DYING=-1;
+		// cells[x][y][cur/next]
+		const cells = Array.from(Array(canvasWidth*canvasHeight)).map(e => Array.from(Array(2)));
+		cells.map((e,i) => {
+			e[cur] = DEAD;
+			e[next] = Math.random()<density ? ALIVE : DEAD;
+		});
+		function neighbors(i){
+			const x = i%canvasWidth;
+			const y = Math.floor(i/canvasWidth);
+			let count = 0;
+			if(y>0){
+				if(x>0){
+					count += cells[i-canvasWidth-1][cur];
+				}
+				if(x<canvasWidth-1){
+					count += cells[i-canvasWidth+1][cur];
+				}
+				count += cells[i-canvasWidth][cur];
+			}
+			if(y<canvasHeight-1){
+				if(x>0){
+					count += cells[i+canvasWidth-1][cur];
+				}
+				if(x<canvasWidth-1){
+					count += cells[i+canvasWidth+1][cur];
+				}
+				count += cells[i+canvasWidth][cur];
+			}
+			if(x>0){
+				count += cells[i-1][cur];
+			}
+			if(x<canvasWidth-1){
+				count += cells[i+1][cur];
+			}
+			return count;
+		}
+
+		pjs.stroke(255);
+		this.draw = function(){
+			pjs.background(0);
+			cells.forEach((cell,i) => {
+				const cell_c = cells[i];
+				if(cell[next] === ALIVE || cell[cur] === ALIVE){
+					//console.count('draw');
+					cell_c[cur] = ALIVE;
+					const x = i%canvasWidth;
+					const y = i/canvasWidth;
+					pjs.point(x, y);
+				}
+				if(cell[next] === DYING){
+					//console.count('dead');
+					cell_c[cur] = DEAD;
+				}
+				cell_c[next] = DEAD;
+
+				// offset for checking neighbors
+				let i_o = i-(3*canvasWidth);
+				if(i_o<0){
+					//console.count('first 3 rows');
+					return;
+				}
+				const cell_o = cells[i_o];
+				const x = i_o%canvasWidth;
+				const y = Math.floor(i_o/canvasWidth);
+				const count = neighbors(i_o);
+				//console.log(count);
+				if(count === 3 && cell_o[cur] === DEAD){
+					//console.count('born');
+					cell_o[next] = ALIVE;
+				}
+				if((count < 2 || count > 3) && cell_o[cur] === ALIVE){
+					//console.count('die');
+					cell_o[next] = DYING;
+				}
+			});
+		};
+		pjs.loop();
 	},
 	'pattern': function(){
 		var pjs = this.getProcessing();
@@ -667,6 +757,7 @@ var demos = {
 		var canvasHeight = this.getProperty('canvasHeight');
 		var centerX = canvasWidth/2;
 		var centerY = canvasHeight/2;
+		var penumbra = centerX*0.75;
 		var pjs = this.getProcessing();
 		var ps = new ParticleJS(pjs, function(){
 			this.x+=this.dx;
@@ -677,11 +768,12 @@ var demos = {
 			}
 			var vel = Math.sqrt((this.dx*this.dx)+(this.dy*this.dy));
 			var dist = Math.min(distance(this.x, this.y, centerX, centerY), centerX);
-			this.a = (64*(1-(dist/centerX))) + (255*(vel*this.t++/centerX)) + (128*(vel/6));
+			this.a = (64*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra)) + (64*(vel/6));
+			//this.a = (128*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra));
 		});
 		this.draw = function(){
 			pjs.background(0);
-			for(var i=0; i<10; ++i){
+			for(var i=0; i<20; ++i){
 				// ttl, x, y, dx, dy, r, g, b, a
 				var x = random(0, canvasWidth);
 				var y = random(0, canvasHeight);
@@ -692,8 +784,9 @@ var demos = {
 				if(x<centerX){
 					theta+=Math.PI;
 				}
-				var force = random(1, 6);
-				//var force = 5*(1-(dist/centerX))+1;
+				//var force = random(1, 6);
+				var force = 5*(1-(dist/centerX))+1;
+				//ps.createParticle(180*(1-(force/6)), x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
 				ps.createParticle(0, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
 			}
 			ps.render();
