@@ -13,6 +13,10 @@ var commands = {
 			return pages[cmd];
 		}
 	},
+	'init': function(){
+		
+		processor.init();
+	},
 	'load': function(demoName){
 		var args = [].slice.call(arguments);
 		args.shift();
@@ -24,6 +28,9 @@ var commands = {
 		for(var demo in cmds){
 			this.echo(cmds[demo]);
 		}
+	},
+	'set': function(prop, val){
+		return processor.setProperty(prop, val);
 	}
 };
 

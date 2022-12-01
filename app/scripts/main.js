@@ -14,11 +14,11 @@ function randInt(min, max){
 	return Math.round((max-min)*Math.random()) + min;
 }
 
-var processor = new Processor();
+var processor = new Processor($('#canvas')[0]);
 var windowHeight = $(window).height();
 processor.setProperty('canvasWidth', windowHeight);
 processor.setProperty('canvasHeight', windowHeight);
-processor.init($('#canvas')[0]);
+processor.init();
 
 $('#console').width($(window).width()-windowHeight);
 var terminal = $('#console').terminal(commands, {

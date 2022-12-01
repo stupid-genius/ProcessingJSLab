@@ -1,11 +1,6 @@
-function Processor(){
-	var canvas;
-	var processing;
-	var pjs;
-	var properties = {};
-
+function Processor(canvas){
 	if(!(this instanceof Processor)){
-		return new Processor();
+		return new Processor(canvas);
 	}
 	if(Processor.instance instanceof Processor){
 		return Processor.instance;
@@ -13,6 +8,10 @@ function Processor(){
 	Object.defineProperty(Processor, 'instance', {
 		value: this
 	});
+
+	var processing;
+	var pjs;
+	var properties = {};
 
 	Object.defineProperties(this, {
 		'draw': {
@@ -37,19 +36,22 @@ function Processor(){
 			}
 		},
 		'init': {
-			value: function(canvas){
-				this.canvas = canvas;
+			value: function(fn){
 				processing = new Processing(canvas, function(processingjs){
 					pjs = processingjs;
 					var instance = Processor.instance;
 
+					console.log('Processing instances: %d', Processing.instances.length);
+					var setupFn = fn || function(){
+						pjs.size(properties['canvasWidth'], properties['canvasHeight'], pjs.P3D);
+						pjs.frameRate(properties['fps'] || 60);
+						console.log('using 2d');
+					};
 					Object.defineProperty(pjs, 'setup', {
 						value: function(){
-							pjs.size(properties['canvasWidth'], properties['canvasHeight']);
-							instance.setup();
+							setupFn(pjs);
 						}
 					});
-
 					Object.defineProperty(pjs, 'draw', {
 						value: function(){
 							instance.draw();
@@ -80,8 +82,11 @@ function Processor(){
 			}
 		},
 		'setup': {
-			value: function(){},
+			value: function(){
+				console.log('default setup');
+				pjs.size(properties['canvasWidth'], properties['canvasHeight']);
+			},
 			writable: true
-		},
+		}
 	});
 }

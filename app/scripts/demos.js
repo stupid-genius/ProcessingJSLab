@@ -1,4 +1,53 @@
 var demos = {
+	'3d': function(){
+		var canvasWidth = this.getProperty('canvasWidth');
+		var canvasHeight = this.getProperty('canvasHeight');
+
+		let angle = 0;
+		const r = 255;
+		const g = 255;
+		const b = 255;
+
+		console.log('init');
+		this.init(function(pjs){
+			console.log('r is %d', r);
+			pjs.size(canvasWidth, canvasHeight, pjs.P3D);
+			pjs.frameRate(properties['fps'] || 60);
+		});
+		var pjs = this.getProcessing();
+
+		this.draw = function(){
+			pjs.background(0);
+			pjs.camera(canvasWidth/2, canvasHeight/5, 200, canvasWidth/2, canvasHeight/2, 0, 0, 1, 0);
+
+			//pjs.ambientLight(50, 50, 50);
+			pjs.pointLight(r, g/10, b/10, canvasWidth/3, canvasHeight/3, 100);
+			pjs.pointLight(r/10, g, b/10, 300, canvasWidth/3, 100);
+			pjs.pointLight(r/10, g/10, b, 300, 300, -100);
+			pjs.pointLight(r, g, b, canvasWidth/3, 300, -100);
+
+			pjs.translate(canvasWidth/2, canvasHeight/2);
+			//pjs.sphere(60);
+
+			pjs.rotateY(angle);
+			pjs.normal(0, 0, 1);
+			pjs.fill(128);
+			pjs.rect(-100, -100, 200, 200);
+
+			/*pjs.beginShape(pjs.TRIANGLE_FAN);
+			pjs.normal(0, 0, 1);
+			pjs.fill(50, 50, 200);
+			pjs.vertex(-100, 100, 0);
+			pjs.vertex(100, 100, 0);
+			pjs.fill(200, 50, 50);
+			pjs.vertex(100, -100, 0);
+			pjs.vertex(-100, -100, 0);
+			pjs.endShape();
+			*/
+			angle += 0.01;
+		};
+		pjs.loop();
+	},
 	'ants': function(){
 	},
 	'boids': function(){
@@ -206,10 +255,13 @@ var demos = {
 		pjs.loop();
 	},
 	'fire': function(){
+		this.setProperty('renderer', '2d');
+		this.init();
 		var pjs = this.getProcessing();
 		var canvasWidth = this.getProperty('canvasWidth');
 		var pitch = canvasWidth*4;
-		var ctxt = this.canvas.getContext('2d');
+		//var ctxt = pjs.externals.canvas.getContext('2d');
+		var ctxt = pjs.externals.context;
         var burnBuffer = ctxt.createImageData(canvasWidth, canvasWidth);
 		var pixels = burnBuffer.data;
 
@@ -768,7 +820,7 @@ var demos = {
 			}
 			var vel = Math.sqrt((this.dx*this.dx)+(this.dy*this.dy));
 			var dist = Math.min(distance(this.x, this.y, centerX, centerY), centerX);
-			this.a = (64*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra)) + (64*(vel/6));
+			this.a = (64*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra)); // + (64*(vel/6));
 			//this.a = (128*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra));
 		});
 		this.draw = function(){
