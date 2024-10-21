@@ -1,4 +1,8 @@
 *.swp
-.swo
+.tmp
+.idea
 node_modules
-build
+dist
+package
+*.log
+*.log.gz

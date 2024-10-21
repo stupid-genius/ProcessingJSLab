@@ -1,10 +1,10 @@
-function ParticleJS(pjs, fn){
-	if(!(this instanceof ParticleJS)){
-		return new ParticleJS(pjs, fn);
+function Particles(pjs, fn){
+	if(!new.target){
+		return new Particles(...arguments);
 	}
 
-	var count = 2;
-	var head = new Particle();
+	let count = 2;
+	let head = new Particle();
 	head.next = new Particle();
 	head.prev = head.next;
 	head.prev.next = head;
@@ -23,7 +23,7 @@ function ParticleJS(pjs, fn){
 					if(count>=this.MAX_COUNT){
 						return;
 					}
-					var newP = new Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
+					const newP = new Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 					newP.next = head;
 					newP.prev = head.prev;
 					newP.prev.next = newP;
@@ -31,7 +31,7 @@ function ParticleJS(pjs, fn){
 					head = newP;
 					++count;
 				}else{
-					var newP = head.prev;
+					const newP = head.prev;
 					newP.activate(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 					head = newP;
 				}
@@ -39,13 +39,13 @@ function ParticleJS(pjs, fn){
 		},
 		'render': {
 			value: function(){
-				var cur = head;
+				let cur = head;
 				while(cur.active){
 					fn.apply(cur);
 					pjs.stroke(cur.r, cur.g, cur.b, cur.a);
 					pjs.point(cur.x, cur.y);
 
-					var dead = cur;
+					const dead = cur;
 					if(cur.ttl>0 && ++cur.t>=cur.ttl){
 						cur.active = false;
 					}
@@ -101,3 +101,4 @@ function ParticleJS(pjs, fn){
 		this.activate(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 	}
 }
+module.exports = Particles;
