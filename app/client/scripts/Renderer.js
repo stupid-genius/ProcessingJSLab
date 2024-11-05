@@ -16,11 +16,11 @@ function Image(pimage, pjs){
 	// if this ends up being too slow, just expose pixels, directly
 	const proxy = new Proxy(pimage, {
 		get: function(target, prop, receiver){
-			logger.silly(`getting ${prop}`);
+			// logger.silly(`getting ${JSON.stringify(prop)}`);
 			if(typeof prop === 'string' && !isNaN(prop)){
 				const index = +prop;
 				if(Number.isInteger(index) && index >= 0 && index < length){
-					logger.silly(`get index ${index}, value ${pixels[index]}`);
+					// logger.silly(`get index ${index}, value ${pixels[index]}`);
 					return pixels[index];
 				}
 			}else{
@@ -29,11 +29,11 @@ function Image(pimage, pjs){
 			}
 		},
 		set: function(target, prop, value, receiver){
-			logger.silly(`setting ${prop}`);
+			// logger.silly(`setting ${JSON.stringify(prop)}`);
 			if(typeof prop === 'string' && !isNaN(prop)){
 				const index = +prop;
 				if(Number.isInteger(index) && index >= 0 && index < length){
-					logger.silly(`set index ${index}, value ${value}`);
+					// logger.silly(`set index ${index}, value ${value}`);
 					pixels[index] = Array.isArray(value) ? pjs.color.apply(this, value) : value;
 				}
 			}else{
@@ -56,7 +56,7 @@ function Image(pimage, pjs){
 		},
 		update: {
 			value: function(){
-				logger.debug('pixels updated');
+				// logger.debug('pixels updated');
 				pimage.pixels.set(pixels);
 			}
 		}
@@ -75,18 +75,18 @@ function DoubleBuffer(renderer){
 		flip: {
 			value: function(){
 				selector ^= 1;
-				logger.debug(`flipped to ${selector}`);
+				// logger.debug(`flipped to ${selector}`);
 			}
 		},
 		read: {
 			get: function(){
-				logger.debug(`read selector: ${selector}`);
+				// logger.debug(`read selector: ${selector}`);
 				return this[selector ^ 1];
 			}
 		},
 		write: {
 			get: function(){
-				logger.debug(`write selector: ${selector ^ 1}`);
+				// logger.debug(`write selector: ${selector ^ 1}`);
 				return this[selector];
 			}
 		}
@@ -107,7 +107,7 @@ function DoubleBuffer(renderer){
 	Object.defineProperties(this, {
 		flip: {
 			value: function(){
-				logger.debug('flip buffers');
+				// logger.debug('flip buffers');
 				// console.assert(buffers.write !== buffers.read, 'Read/Write buffers should not be the same object');
 				const writeBuf = buffers.write;
 				const buffer = writeBuf.buffer;
@@ -118,7 +118,7 @@ function DoubleBuffer(renderer){
 		},
 		readBuffer: {
 			get: function(){
-				logger.debug(`get read buffer (${selector})`);
+				// logger.debug(`get read buffer (${selector})`);
 				return buffers.read.pixels;
 			}
 		},
@@ -141,65 +141,29 @@ function Renderer(canvas){
 	// { Processing, PFont } = await import('https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js');
 	// console.dir(Processing);
 
-	let setupFn = (pjs)=>{
-		pjs.background(10, 17, 10);
-		// pjs.background(0xA110AFF);
-		pjs.frameRate(60);
-		pjs.noLoop();
+	const defaultConfig = {
+		background: 0xFF0A110A,
+		frameRate: 60,
+		height: canvas.height,
+		width: canvas.width
+		// renderer: pjs.P3D
 	};
-	let drawFn = ()=>{};
-	let keyFn = ()=>{
-		switch(pjs.keyCode){
-		case pjs.UP:
-			pjs.loop();
-			break;
-		case pjs.DOWN:
-			pjs.noLoop();
-			break;
-		case pjs.LEFT:
-			pjs.save('image.png');
-			break;
-		case pjs.RIGHT:
-			pjs.redraw();
-		}
-	};
-	/* eslint-disable-next-line no-undef */
-	const pjs = new Processing(canvas, (pjs) => {
-		logger.info('Processing.js created');
-		logger.debug(`canvas width (${canvas.width}) height (${canvas.height})`);
-		pjs.size(canvas.width, canvas.height);
-		logger.debug(`pjs width (${pjs.width}) height (${pjs.height})`);
-
-		Object.defineProperties(pjs, {
-			draw: {
-				get: function(){
-					return drawFn;
-				}
-			},
-			keyPressed: {
-				get: function(){
-					return keyFn;
-				}
-			},
-			setup: {
-				get: function(){
-					return setupFn.bind(this, pjs);
-				}
-			}
-		});
-	});
+	let pjs;
 
 	Object.defineProperties(this, {
 		createImage: {
 			value: function(width, height){
-				const img = pjs.createImage(width ?? canvas.width, height ?? canvas.height, pjs.WEBGL);
+				const img = pjs.createImage(width ?? canvas.width, height ?? canvas.height);
 				return new Image(img, pjs);
 			}
 		},
 		draw: {
 			set: function(fn){
-				logger.debug('drawFn set');
-				drawFn = fn;
+				logger.debug('pjs.draw set');
+				Object.defineProperty(pjs, 'draw', {
+					value: fn,
+					writable: true
+				});
 			}
 		},
 		doubleBuffer: {
@@ -208,21 +172,74 @@ function Renderer(canvas){
 			}
 		},
 		init: {
-			value: () => pjs.setup()
+			value: function(custom){
+				if(pjs !== undefined){
+					pjs.noLoop();
+				}
+				const config = Object.assign({}, defaultConfig, custom);
+				/* eslint-disable-next-line no-undef */
+				pjs = new Processing(canvas, (processingjs) => {
+					logger.info('Processing.js created');
+					logger.debug(`canvas width (${canvas.width}) height (${canvas.height})`);
+
+					Object.defineProperties(processingjs, {
+						draw: {
+							value: function(){},
+							writable: true
+						},
+						keyPressed: {
+							value: function(){
+								switch(processingjs.keyCode){
+								case processingjs.UP:
+									processingjs.loop();
+									break;
+								case processingjs.DOWN:
+									processingjs.noLoop();
+									break;
+								case processingjs.LEFT:
+									processingjs.save('image.png');
+									break;
+								case processingjs.RIGHT:
+									processingjs.redraw();
+								}
+							},
+							writable: true
+						},
+						setup: {
+							value: function(){
+								processingjs.size(config.width, config.height);
+								logger.debug(`processingjs width (${processingjs.width}) height (${processingjs.height}) ${processingjs.use3DContext}`);
+								processingjs.frameRate(config.frameRate);
+								processingjs.noLoop();
+								processingjs.background(config.background);
+								logger.info('Processing.js setup');
+							}
+						}
+					});
+				});
+			}
 		},
 		input: {
 			set: function(fn){
-				logger.debug('keyFn set');
-				keyFn = fn;
+				logger.debug('keyPressed set');
+				Object.defineProperty(pjs, 'keyPressed', {
+					value: fn,
+					writable: true
+				});
 			}
 		},
-		setup: {
-			set: function(fn){
-				logger.debug('setupFn set');
-				setupFn = fn;
+		pixelHeight: {
+			get: function(){
+				return 0;
+			}
+		},
+		pixelWidth: {
+			get: function(){
+				return 0;
 			}
 		}
 	});
+	this.init();
 
 	const proxy = new Proxy(this, {
 		get: function(target, prop){

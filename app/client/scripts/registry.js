@@ -8,10 +8,16 @@ const registry = Object.freeze({
 		}
 	},
 	help: {
-		func: function(){
-			this.echo('Available commands:');
-			Object.keys(registry).forEach(cmd => this.echo(cmd));
+		func: function(command){
+			if(command === undefined){
+				this.echo('Available commands:');
+				Object.keys(registry).forEach(cmd => this.echo(cmd));
+			}else{
+				this.echo(registry[command].man);
+			}
 		},
+		man: 'Print help text for [command].  If no command is passed, list available commands.',
+		usage: 'help [command]'
 	},
 	load: {
 		func: function(name, ...args){
@@ -20,13 +26,16 @@ const registry = Object.freeze({
 				renderer.init();
 				demos[name].apply(this, args);
 			}
-		}
+		},
+		man: 'Load a demo.  Some demos accept additional arguments.\n<b>Example:</b>\n`load chaos 6`.',
+		usage: 'load [demo] [args]'
 	},
 	ls: {
 		func: function(){
 			this.echo('Available demos:');
 			Object.keys(demos).forEach(demo => this.echo(demo));
-		}
+		},
+		man: 'List available demos'
 	}
 });
 module.exports = registry;

@@ -199,6 +199,7 @@ class Terminal extends HTMLElement{
 			this.inputLine.textContent = '';
 			this.echo(`${this.prompt}${command}`);
 			this.processCommand(command);
+			this.historyIndex = this.commandHistory.length;
 			break;
 		}
 		case 'ArrowUp':
@@ -235,7 +236,6 @@ class Terminal extends HTMLElement{
 						this.commandHistory.shift();
 					}
 					localStorage.setItem('commandHistory', JSON.stringify(this.commandHistory));
-					this.historyIndex = this.commandHistory.length;
 				}
 				break;
 			case Executor.ENOTFOUND:

@@ -15,6 +15,49 @@ function checkerBoard(boardWidth, squareWidth, color, index){
 }
 
 const demos = {
+	//'3d': function(){
+	//	// renderer.init({
+	//	// 	background: 0xFF0A110A,
+	//	// 	frameRate: 60,
+	//	// 	renderer: 'P3D'
+	//	// 	// renderer: 2
+	//	// });
+	//	renderer.init('P3D');
+	//	const canvasWidth = renderer.width;
+	//	const canvasHeight = renderer.height;
+	//	let angle = 0;
+	//	const r = 255;
+	//	const g = 255;
+	//	const b = 255;
+	//	// renderer.init();
+	//	renderer.draw = function(){
+	//		renderer.background(0);
+	//		renderer.camera(canvasWidth/2, canvasHeight/5, 200, canvasWidth/2, canvasHeight/2, 0, 0, 1, 0);
+	//		//renderer.ambientLight(50, 50, 50);
+	//		renderer.pointLight(r, g/10, b/10, canvasWidth/3, canvasHeight/3, 100);
+	//		renderer.pointLight(r/10, g, b/10, 300, canvasWidth/3, 100);
+	//		renderer.pointLight(r/10, g/10, b, 300, 300, -100);
+	//		renderer.pointLight(r, g, b, canvasWidth/3, 300, -100);
+	//		renderer.translate(canvasWidth/2, canvasHeight/2);
+	//		//renderer.sphere(60);
+	//		renderer.rotateY(angle);
+	//		renderer.normal(0, 0, 1);
+	//		renderer.fill(128);
+	//		renderer.rect(-100, -100, 200, 200);
+	//		/*pjs.beginShape(pjs.TRIANGLE_FAN);
+	//		pjs.normal(0, 0, 1);
+	//		pjs.fill(50, 50, 200);
+	//		pjs.vertex(-100, 100, 0);
+	//		pjs.vertex(100, 100, 0);
+	//		pjs.fill(200, 50, 50);
+	//		pjs.vertex(100, -100, 0);
+	//		pjs.vertex(-100, -100, 0);
+	//		pjs.endShape();
+	//		*/
+	//		angle += 0.01;
+	//	};
+	//	renderer.loop();
+	//},
 	// ants: function(){},
 	// boids: function(){},
 	bz: function(){
@@ -56,8 +99,95 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// cell: function(_, width=200, height=200){
+	// 	console.log(_);
+	// 	const rule = (currentState, neighbors) => {
+	// 		if(currentState === ALIVE){
+	// 			return (neighbors === 2 || neighbors === 3) ? ALIVE : DEAD;
+	// 		}else{
+	// 			return neighbors === 3 ? ALIVE : DEAD;
+	// 		}
+	// 	};
+	// 	renderer.init({
+	// 		background: 0,
+	// 		frameRate: 400,
+	// 		height: +height,
+	// 		width: +width
+	// 	});
+	// 	const canvasWidth = renderer.width;
+	// 	const canvasHeight = renderer.height;
+
+	// 	const cur = 0, next = 1, ALIVE = 1, DEAD = 0;
+
+	// 	// Cell grid setup: 2D array of cells, each tracking `cur` and `next` state
+	// 	const cells = Array.from(Array(canvasWidth * canvasHeight)).map(() => [DEAD, DEAD]);
+	// 	// Initialize cells randomly or as desired (can be customized)
+	// 	cells.forEach(cell => cell[next] = Math.random() < 0.1 ? ALIVE : DEAD);
+
+	// 	// Helper function to count neighbors for a cell at index i
+	// 	function neighbors(i){
+	// 		const x = i % canvasWidth;
+	// 		const y = Math.floor(i / canvasWidth);
+	// 		let count = 0;
+	// 		// Check all 8 neighbors, respecting canvas boundaries
+	// 		if(y > 0){
+	// 			if(x > 0){
+	// 				count += cells[i - canvasWidth - 1][cur];
+	// 			}
+	// 			count += cells[i - canvasWidth][cur];
+	// 			if(x < canvasWidth - 1){
+	// 				count += cells[i - canvasWidth + 1][cur];
+	// 			}
+	// 		}
+	// 		if(y < canvasHeight - 1){
+	// 			if(x > 0){
+	// 				count += cells[i + canvasWidth - 1][cur];
+	// 			}
+	// 			count += cells[i + canvasWidth][cur];
+	// 			if(x < canvasWidth - 1){
+	// 				count += cells[i + canvasWidth + 1][cur];
+	// 			}
+	// 		}
+	// 		if(x > 0){
+	// 			count += cells[i - 1][cur];
+	// 		}
+	// 		if(x < canvasWidth - 1){
+	// 			count += cells[i + 1][cur];
+	// 		}
+	// 		return count;
+	// 	}
+
+	// 	// Main draw function, called every frame
+	// 	renderer.stroke(255);
+	// 	renderer.draw = function(){
+	// 		renderer.background([0, 0, 255]);
+
+	// 		// Iterate over cells and render any alive cells
+	// 		cells.forEach((cell, i) => {
+	// 			if(cell[cur] === ALIVE){
+	// 				const x = i % canvasWidth;
+	// 				const y = Math.floor(i / canvasWidth);
+	// 				renderer.point(x, y);
+	// 			}
+
+	// 			// Use the rule function to determine next state
+	// 			const count = neighbors(i);
+	// 			const currentState = cell[cur];
+	// 			cell[next] = rule(currentState, count);
+	// 		});
+
+	// 		// Update cell states from next to cur for the next frame
+	// 		cells.forEach(cell => {
+	// 			cell[cur] = cell[next];
+	// 		});
+	// 	};
+
+	// 	renderer.loop();
+	// },
 	chaos: function(simplex='3'){
-		renderer.frameRate(400);
+		renderer.init({
+			frameRate: 400
+		});
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
 		const xCenter = canvasWidth/2;
@@ -151,6 +281,12 @@ const demos = {
 		renderer.loop();
 	},
 	fire: function(){
+		renderer.init({
+			background: 0,
+			frameRate: 60,
+			height: 300,
+			width: 300
+		});
 		const canvasWidth = renderer.width;
 		const buffers = renderer.doubleBuffer();
 
@@ -185,7 +321,7 @@ const demos = {
 				// seed a few pixels
 				// maybe do some particle stuff
 				const row = p/canvasWidth;
-				if(Math.random() < Math.pow(Math.E, Math.pow(row/numRows, 4)) - 0.9925){
+				if(Math.random() < Math.pow(Math.E, Math.pow(row/numRows, 4)) - 1){
 					if(Math.random() > 0.975){
 						newPixels[p] = baseColor;
 						continue;
@@ -199,7 +335,13 @@ const demos = {
 					xMath.decodeColor(curPixels[p]),
 					xMath.decodeColor(curPixels[p+1]),
 					xMath.decodeColor(curPixels[p+canvasWidth]),
-				).map((e, i) => i===3 ? e : e/4);
+				).map((e, i) => {
+					if(i===3){
+						return 255;
+					}
+					const avg = e/4.25;
+					return avg < 10 ? 0 : avg;
+				});
 				newPixels[p] = newColor;
 			}
 			buffers.flip();
@@ -400,7 +542,6 @@ const demos = {
 		lensWidth = +lensWidth;
 		lensDepth = +lensDepth;
 		// const log = this.log.bind(this);
-		const log = ()=>{};
 		const canvasWidth = renderer.width;
 		const bg = renderer.createImage();
 		const height = bg.height;
@@ -442,11 +583,11 @@ const demos = {
 			dy = 2;
 
 		renderer.draw = function(){
-			log('update');
+			// log('update');
 			x += dx;
 			y += dy;
 
-			log('check');
+			// log('check');
 			if(x < 0){
 				x = 0;
 				dx = -dx;
@@ -464,7 +605,7 @@ const demos = {
 				dy = -dy;
 			}
 
-			log('draw');
+			// log('draw');
 			renderer.background(bg);
 
 			const start = y*canvasWidth+x;
@@ -475,14 +616,19 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	life: function(){
+	life: function(width=300, height=300){
 		/*
 		 *  Any live cell with fewer than two live neighbours dies, as if by underpopulation.
 		 *	Any live cell with two or three live neighbours lives on to the next generation.
 		 *	Any live cell with more than three live neighbours dies, as if by overpopulation.
 		 *	Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 		 */
-		renderer.frameRate(12);
+		renderer.init({
+			background: 0,
+			frameRate: 12,
+			height: +height,
+			width: +width
+		});
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
 
@@ -575,7 +721,76 @@ const demos = {
 		bg.update();
 		renderer.background(bg);
 	},
-	// plasma: function(){},
+	//plasma: function(){
+	//	const pjs = this.getProcessing();
+	//	const canvasWidth = this.getProperty('canvasWidth');
+	//	const canvasHeight = this.getProperty('canvasHeight');
+	//	const pitch = canvasWidth*4;
+	//	const ctxt = this.canvas.getContext('2d');
+	//	const burnBuffer = ctxt.createImageData(canvasWidth, canvasWidth);
+	//	const pixels = burnBuffer.data;
+
+	//	//const fastSin = new FastTrig().sin;
+	//	const fastSin = Math.sin;
+	//	function palette(i){
+	//		const r = 255*Math.pow(t, 0.2);
+	//		const g = 255*t*t;
+	//		const b = 255*t*t*t*t;
+	//		const a = 255*Math.pow(t, 0.2);
+	//		return [r, g, b, a];
+	//	}
+	//	// set alpha channel
+	//	for(const p=3;p<pixels.length;p+=4){
+	//		pixels[p] = 255;
+	//	}
+	//	ctxt.putImageData(burnBuffer, 0, 0);
+
+	//	const pos1 = 0;
+	//	const pos2 = 0;
+	//	const pos3 = 0;
+	//	const pos4 = 0;
+	//	const tpos1 = 0;
+	//	const tpos2 = 0;
+	//	const tpos3 = 0;
+	//	const tpos4 = 0;
+	//	const lastRow = pixels.length-pitch;
+	//	const numRows = pixels.length/pitch;
+	//	this.draw = function(){
+	//		tpos4 = pos4;
+	//		tpos3 = pos3;
+	//		for(const i=0; i<pixels.length; ++i){
+	//			// skip first row, last row, first col, last col, alpha
+	//			if(p<pitch || p>=lastRow || p%pitch<4 || p%pitch>pitch-5 || p%4===3){
+	//				continue;
+	//			}
+	//			const row = p/pitch;
+	//			//rows
+	//			tpos1 = pos1 + 5;
+	//			tpos2 = pos2 + 3;
+	//			tpos3 &= 511;
+	//			tpos4 &= 511;
+
+	//			for(const j=0; j<canvasWidth; ++j,++i){
+	//				//cols
+	//				tpos1 &= 511;
+	//				tpos2 &= 511;
+
+	//				//const x = fastSin[tpos1] + fastSin[tpos2] + fastSin[tpos3] + fastSin[tpos4];
+	//				const x = fastSin( tpos1 ) + fastSin( tpos2 ) + fastSin( tpos3 ) + fastSin( tpos4 );
+	//				pixels[i] = 128 + (x >> 4);
+
+	//				tpos1 += 5;
+	//				tpos2 += 3;
+	//			}
+	//			tpos4 += 3;
+	//			tpos3 += 1;
+	//		}
+	//		pos1 += 9;
+	//		pos3 += 8;
+	//		ctxt.putImageData(burnBuffer, 0, 0);
+	//	};
+	//	pjs.loop();
+	//},
 	snow: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
