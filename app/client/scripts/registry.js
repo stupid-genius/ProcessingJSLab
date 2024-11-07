@@ -2,6 +2,12 @@ const demos = require('./demos');
 const renderer = require('./Renderer').Renderer();
 
 const registry = Object.freeze({
+	cat: {
+		func: function(name){
+			this.echo(demos[name].toString());
+		},
+		man: 'Print code listing for [demo]'
+	},
 	clear: {
 		func: function(){
 			this.clear();

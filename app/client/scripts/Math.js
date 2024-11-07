@@ -49,9 +49,7 @@ const xMath = Object.freeze({
 		];
 	},
 	distance: (x, y, x2, y2) => {
-		const distX = Math.abs(x2-x);
-		const distY = Math.abs(y2-y);
-		return Math.sqrt((distX*distX)+(distY*distY));
+		return Math.hypot(Math.abs(x2-x), Math.abs(y2-y));
 	},
 	fastInvSqrt: () => {
 		return 1;

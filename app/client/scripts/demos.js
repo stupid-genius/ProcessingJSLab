@@ -58,8 +58,195 @@ const demos = {
 	//	};
 	//	renderer.loop();
 	//},
-	// ants: function(){},
-	// boids: function(){},
+	// ants: function(){
+	// 	const canvasWidth = renderer.width;
+	// 	const canvasHeight = renderer.height;
+
+	// 	const MAX_DX = 5;
+	// 	const ACCEL_RATE = 0.5;
+	// 	const TURN_RATE = 0.1;
+	// 	const ps = new Particles(renderer, function(){
+	// 		this.state = 0;
+
+	// 		this.dddx = xMath.range(0, 2)*ACCEL_RATE;
+	// 		this.dddy = xMath.range(0, 2)*ACCEL_RATE;
+
+	// 		this.ddx = xMath.range(-TURN_RATE, TURN_RATE)*this.dddx;
+	// 		this.ddy = xMath.range(-TURN_RATE, TURN_RATE)*this.dddy;
+	// 		const xSpeed = Math.abs(this.dx)-MAX_DX;
+	// 		const ySpeed = Math.abs(this.dy)-MAX_DX;
+	// 		if(xSpeed > 0){
+	// 			this.ddx+=-this.dx*ACCEL_RATE;
+	// 		}
+	// 		if(ySpeed > 0){
+	// 			this.ddy+=-this.dy*ACCEL_RATE;
+	// 		}
+
+	// 		// don't control here
+	// 		this.dx+=this.ddx;
+	// 		this.dy+=this.ddy;
+	// 		// shh...just let it happen...
+	// 		this.x+=this.dx;
+	// 		this.y+=this.dy;
+
+	// 		if(this.x>=canvasWidth-1){
+	// 			this.x=canvasWidth-1;
+	// 			this.dx*=-1;
+	// 		}else if(this.x<0){
+	// 			this.x=0;
+	// 			this.dx*=-1;
+	// 		}
+	// 		if(this.y>=canvasHeight-1){
+	// 			this.y=canvasHeight-1;
+	// 			this.dy*=-1;
+	// 		}else if(this.y<0){
+	// 			this.y=0;
+	// 			this.dy*=-1;
+	// 		}
+	// 	});
+
+	// 	for(let i=0; i<10; ++i){
+	// 		// ttl, x, y, dx, dy, r, g, b, a
+	// 		ps.createParticle(0, canvasWidth/2, canvasHeight/2, xMath.range(-0.5, 0.5), xMath.range(-0.5, 0.5), 255, 255, 255, 255);
+	// 	}
+
+	// 	renderer.stroke(0, 0, 0, 255);
+	// 	renderer.draw = function(){
+	// 		renderer.background(0);
+	// 		ps.render();
+	// 	};
+	// 	renderer.loop();
+	// },
+	boids: function(){
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const middleX = canvasWidth/2;
+		const middleY = canvasHeight/2;
+
+		const NUM_BOIDS = 40;
+		const MAX_SPEED = 5;
+		const TURN_RATE = 0.0001;
+		const NEIGHBOR_RADIUS = 100;
+		const SEPARATION_RADIUS = 40;
+
+		const ALIGNMENT_STRENGTH = 1;
+		const COHESION_STRENGTH = 3;
+		const SEPARATION_STRENGTH = 2;
+
+		const ps = new Particles(renderer, function(ps){
+			const alignment = { x: 0, y: 0 };
+			const cohesion = { x: 0, y: 0 };
+			const separation = { x: 0, y: 0 };
+			let total = 0;
+			let separationCount = 0;
+
+			const head = ps.list;
+			let cur = head;
+			while(cur.active){
+				if(cur === this){
+					cur = cur.next;
+					if(cur === head){
+						break;
+					}
+					continue;
+				}
+				const distance = Math.hypot(this.x - cur.x, this.y - cur.y);
+
+				// Alignment
+				if(distance < NEIGHBOR_RADIUS){
+					alignment.x += cur.dx;
+					alignment.y += cur.dy;
+					cohesion.x += cur.x;
+					cohesion.y += cur.y;
+					total++;
+				}
+
+				// Separation
+				if(distance < SEPARATION_RADIUS){
+					const force = (SEPARATION_RADIUS - distance) / SEPARATION_RADIUS;
+					// const force = 1;
+					separation.x += (this.x - cur.x) * force;
+					separation.y += (this.y - cur.y) * force;
+					separationCount++;
+				}
+				cur = cur.next;
+				if(cur === head){
+					break;
+				}
+			}
+
+			if(total > 0){
+				// Calculate alignment (average heading)
+				alignment.x /= total;
+				alignment.y /= total;
+				const alignmentMag = Math.hypot(alignment.x, alignment.y);
+				if(alignmentMag > 0){
+					alignment.x = (alignment.x / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+					alignment.y = (alignment.y / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+				}
+
+				// Calculate cohesion (move toward center of mass)
+				cohesion.x = (cohesion.x / total - this.x) * TURN_RATE * COHESION_STRENGTH;
+				cohesion.y = (cohesion.y / total - this.y) * TURN_RATE * COHESION_STRENGTH;
+			}
+			if(separationCount > 0){
+				// Calculate separation (avoid crowding)
+				separation.x /= separationCount;
+				separation.y /= separationCount;
+				const separationMag = Math.hypot(separation.x, separation.y);
+				if(separationMag > 0){
+					separation.x = (separation.x / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+					separation.y = (separation.y / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+				}
+			}
+
+			// Apply forces to acceleration
+			this.ddx = alignment.x + cohesion.x + separation.x;
+			this.ddy = alignment.y + cohesion.y + separation.y;
+
+			this.dx += this.ddx;
+			this.dy += this.ddy;
+
+			const speed = Math.hypot(this.dx, this.dy);
+			if(speed > MAX_SPEED){
+				this.dx = (this.dx / speed) * MAX_SPEED;
+				this.dy = (this.dy / speed) * MAX_SPEED;
+			}
+
+			const x = this.x - (3 * this.dx);
+			const y = this.y - (3 * this.dy);
+			this.x += this.dx;
+			this.y += this.dy;
+			renderer.line(this.x, this.y, x, y);
+
+			if(this.x >= canvasWidth - 1){
+				this.x = canvasWidth - 1;
+				this.dx *= -1;
+			}else if(this.x < 0){
+				this.x = 0;
+				this.dx *= -1;
+			}
+			if(this.y >= canvasHeight - 1){
+				this.y = canvasHeight - 1;
+				this.dy *= -1;
+			}else if (this.y < 0){
+				this.y = 0;
+				this.dy *= -1;
+			}
+		});
+
+		for(let i=0; i<NUM_BOIDS; ++i){
+			// ttl, x, y, dx, dy, r, g, b, a
+			ps.createParticle(0, xMath.range(middleX-10, middleX+10), xMath.range(middleY-10, middleY+10), xMath.range(-0.5, 0.5), xMath.range(-0.5, 0.5), xMath.roll(255), xMath.roll(255), xMath.roll(255), 255);
+		}
+
+		renderer.stroke(0, 0, 0, 255);
+		renderer.draw = function(){
+			renderer.background(0);
+			ps.render();
+		};
+		renderer.loop();
+	},
 	bz: function(){
 		const canvasWidth = renderer.width;
 
@@ -819,34 +1006,32 @@ const demos = {
 		const penumbra = centerX * 0.75;
 
 		const ps = new Particles(renderer, function(){
-			this.x+=this.dx;
-			this.y+=this.dy;
-			if(this.x>=canvasWidth-1 || this.y>=canvasHeight-1
-					|| this.x<0 || this.y<0){
+			const x = this.x - (3 * this.dx);
+			const y = this.y - (3 * this.dy);
+			this.x += this.dx;
+			this.y += this.dy;
+			renderer.line(this.x, this.y, x, y);
+			if(this.x >= canvasWidth-1 || this.y >= canvasHeight-1 || this.x<0 || this.y<0){
 				this.active = false;
 			}
-			const vel = Math.sqrt((this.dx*this.dx)+(this.dy*this.dy));
+			const vel = Math.hypot(this.dx, this.dy);
 			const dist = Math.min(xMath.distance(this.x, this.y, centerX, centerY), centerX);
-			this.a = (64*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra)) + (64*(vel/6));
-			//this.a = (128*(1-(dist/penumbra))) + (255*(vel*this.t++/penumbra));
+			// dimmer when:
+			// - further
+			// - slower
+			// - older
+			this.a = (128*Math.max(1-(dist/penumbra), 0)) + (64*(vel/10)) + (64*Math.max(1-this.t++, 0));
 		});
 
 		renderer.draw = function(){
 			renderer.background(0);
 			for(let i=0; i<20; ++i){
 				// ttl, x, y, dx, dy, r, g, b, a
-				let x = xMath.roll(canvasWidth);
-				let y = xMath.roll(canvasHeight);
-				x=(x+xMath.roll(canvasWidth))/2;
-				y=(y+xMath.roll(canvasHeight))/2;
+				const x = (xMath.roll(canvasWidth) + xMath.roll(canvasWidth)) / 2;
+				const y = xMath.roll(canvasHeight) + xMath.roll(canvasHeight) / 2;
 				const dist = Math.min(xMath.distance(x, y, centerX, centerY), centerX);
-				let theta = -Math.atan((centerY-y)/(x-centerX));
-				if(x<centerX){
-					theta+=Math.PI;
-				}
-				//const force = xMath.range(1, 6);
-				const force = 5*(1-(dist/centerX))+1;
-				//ps.createParticle(180*(1-(force/6)), x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
+				const theta = -Math.atan2(centerY-y, x-centerX);
+				const force = 10*(dist/centerX)+1;
 				ps.createParticle(0, x, y, Math.cos(theta)*force, Math.sin(theta)*force, 255, 255, 255, 0);
 			}
 			ps.render();

@@ -17,7 +17,12 @@ function Particles(pjs, fn){
 	this.MAX_COUNT = 3000;
 
 	Object.defineProperties(this, {
-		'createParticle': { // ttl, x, y, dx, dy, r, g, b, a
+		count: {
+			get: function(){
+				return count;
+			}
+		},
+		createParticle: { // ttl, x, y, dx, dy, r, g, b, a
 			value: function(nttl, nx, ny, ndx, ndy, nr, ng, nb, na){
 				if(head.prev.active){
 					if(count>=this.MAX_COUNT){
@@ -37,11 +42,16 @@ function Particles(pjs, fn){
 				}
 			}
 		},
-		'render': {
+		list: {
+			get: function(){
+				return head;
+			}
+		},
+		render: {
 			value: function(){
 				let cur = head;
 				while(cur.active){
-					fn.apply(cur);
+					fn.call(cur, this);
 					pjs.stroke(cur.r, cur.g, cur.b, cur.a);
 					pjs.point(cur.x, cur.y);
 
@@ -73,12 +83,12 @@ function Particles(pjs, fn){
 
 	// ttl, x, y, dx, dy, r, g, b, a
 	function Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na){
-		if(!(this instanceof Particle)){
-			return new Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
+		if(!new.target){
+			return new Particle(...arguments);
 		}
 
 		Object.defineProperties(this, {
-			'activate': {
+			activate: {
 				value: function(nttl, nx, ny, ndx, ndy, nr, ng, nb, na){
 					this.active = true;
 					this.ttl = nttl;
