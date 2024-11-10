@@ -37,7 +37,8 @@ const xMath = Object.freeze({
 		}
 
 		return colors[0].map((_, index) =>
-			Math.min(colors.reduce((sum, color) => sum + color[index], 0), 255)
+			// Math.min(colors.reduce((sum, color) => sum + color[index], 0), 255)
+			colors.reduce((sum, color) => sum + color[index], 0)
 		);
 	},
 	decodeColor: (ARGB) => {
@@ -55,8 +56,13 @@ const xMath = Object.freeze({
 		return 1;
 	},
 	fastTrig: FastTrig(),
+	randomColor: (alpha=false) => {
+		const color = Array.from({length: 3}, () => xMath.roll(255));
+		color.push(alpha ? xMath.roll(255) : 255);
+		return color;
+	},
 	range: (min, max) => {
-		let real = Math.random() * (max - min + 1);
+		let real = Math.random() * (max - min);
 		if(Number.isInteger(min) && Number.isInteger(max)){
 			real = Math.floor(real);
 		}

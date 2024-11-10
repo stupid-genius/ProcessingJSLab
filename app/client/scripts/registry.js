@@ -42,6 +42,14 @@ const registry = Object.freeze({
 			Object.keys(demos).forEach(demo => this.echo(demo));
 		},
 		man: 'List available demos'
+	},
+	properties: {
+		func: function(name){
+			if(name === undefined){
+				this.echo(JSON.stringify(renderer, null, 2));
+			}
+			this.echo(renderer[name]);
+		}
 	}
 });
 module.exports = registry;

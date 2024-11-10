@@ -30,7 +30,7 @@ const demos = {
 	//	const g = 255;
 	//	const b = 255;
 	//	// renderer.init();
-	//	renderer.draw = function(){
+	//	renderer.frame = function(){
 	//		renderer.background(0);
 	//		renderer.camera(canvasWidth/2, canvasHeight/5, 200, canvasWidth/2, canvasHeight/2, 0, 0, 1, 0);
 	//		//renderer.ambientLight(50, 50, 50);
@@ -81,6 +81,13 @@ const demos = {
 	// 		if(ySpeed > 0){
 	// 			this.ddy+=-this.dy*ACCEL_RATE;
 	// 		}
+	//
+	// if(Math.random() > 0.75){
+	// 	const theta = Math.atan2(this.dy, this.dx) + xMath.range(-0.01, 0.01);
+	// 	const force = xMath.range(-0.001, 0.001);
+	// 	distraction.x = force * Math.cos(theta) - this.dx;
+	// 	distraction.y = force * Math.sin(theta) - this.dy;
+	// }
 
 	// 		// don't control here
 	// 		this.dx+=this.ddx;
@@ -111,7 +118,7 @@ const demos = {
 	// 	}
 
 	// 	renderer.stroke(0, 0, 0, 255);
-	// 	renderer.draw = function(){
+	// 	renderer.frame = function(){
 	// 		renderer.background(0);
 	// 		ps.render();
 	// 	};
@@ -123,20 +130,22 @@ const demos = {
 		const middleX = canvasWidth/2;
 		const middleY = canvasHeight/2;
 
-		const NUM_BOIDS = 40;
-		const MAX_SPEED = 5;
-		const TURN_RATE = 0.0001;
+		const NUM_BOIDS = 200;
+		const MAX_SPEED = 3;
+		const TURN_RATE = 0.0005;
 		const NEIGHBOR_RADIUS = 100;
 		const SEPARATION_RADIUS = 40;
 
 		const ALIGNMENT_STRENGTH = 1;
-		const COHESION_STRENGTH = 3;
-		const SEPARATION_STRENGTH = 2;
+		const COHESION_STRENGTH = 1.25;
+		const SEPARATION_STRENGTH = 1;
+		const ATTENTION_STRENGTH = 0.75;
 
 		const ps = new Particles(renderer, function(ps){
-			const alignment = { x: 0, y: 0 };
-			const cohesion = { x: 0, y: 0 };
-			const separation = { x: 0, y: 0 };
+			const alignment = {x: 0, y: 0};
+			const cohesion = {x: 0, y: 0};
+			const separation = {x: 0, y: 0};
+			const distraction = {x: 0, y: 0};
 			let total = 0;
 			let separationCount = 0;
 
@@ -164,7 +173,6 @@ const demos = {
 				// Separation
 				if(distance < SEPARATION_RADIUS){
 					const force = (SEPARATION_RADIUS - distance) / SEPARATION_RADIUS;
-					// const force = 1;
 					separation.x += (this.x - cur.x) * force;
 					separation.y += (this.y - cur.y) * force;
 					separationCount++;
@@ -199,10 +207,16 @@ const demos = {
 					separation.y = (separation.y / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
 				}
 			}
+			if(Math.random() > ATTENTION_STRENGTH){
+				const theta = Math.atan2(this.dy, this.dx) + xMath.range(-0.1, 0.1);
+				const force = Math.hypot(this.dx, this.dy);
+				distraction.x = force * Math.cos(theta) - this.dx;
+				distraction.y = force * Math.sin(theta) - this.dy;
+			}
 
 			// Apply forces to acceleration
-			this.ddx = alignment.x + cohesion.x + separation.x;
-			this.ddy = alignment.y + cohesion.y + separation.y;
+			this.ddx = alignment.x + cohesion.x + separation.x + distraction.x;
+			this.ddy = alignment.y + cohesion.y + separation.y + distraction.y;
 
 			this.dx += this.ddx;
 			this.dy += this.ddy;
@@ -235,13 +249,16 @@ const demos = {
 			}
 		});
 
+		const direction = xMath.range(0, 2*Math.PI);
 		for(let i=0; i<NUM_BOIDS; ++i){
+			const force = xMath.range(0.001, 1) * MAX_SPEED;
+			const theta = xMath.range(-0.1, 0.1);
 			// ttl, x, y, dx, dy, r, g, b, a
-			ps.createParticle(0, xMath.range(middleX-10, middleX+10), xMath.range(middleY-10, middleY+10), xMath.range(-0.5, 0.5), xMath.range(-0.5, 0.5), xMath.roll(255), xMath.roll(255), xMath.roll(255), 255);
+			ps.createParticle(0, xMath.range(middleX-10.01, middleX+10), xMath.range(middleY-10.01, middleY+10), force * Math.cos(theta+direction), force * Math.sin(theta+direction), ...xMath.randomColor());
 		}
 
 		renderer.stroke(0, 0, 0, 255);
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			ps.render();
 		};
@@ -256,7 +273,7 @@ const demos = {
 
 		renderer.background(255);
 		renderer.noFill();
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.stroke(0, 0, 0, 20);
 			controls.map(function(e, i, a){
 				let newPos = e+velocities[i];
@@ -286,91 +303,44 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// cell: function(_, width=200, height=200){
-	// 	console.log(_);
-	// 	const rule = (currentState, neighbors) => {
-	// 		if(currentState === ALIVE){
-	// 			return (neighbors === 2 || neighbors === 3) ? ALIVE : DEAD;
-	// 		}else{
-	// 			return neighbors === 3 ? ALIVE : DEAD;
-	// 		}
-	// 	};
-	// 	renderer.init({
-	// 		background: 0,
-	// 		frameRate: 400,
-	// 		height: +height,
-	// 		width: +width
-	// 	});
-	// 	const canvasWidth = renderer.width;
-	// 	const canvasHeight = renderer.height;
+	cell: function(_, width=200, height=200){
+		console.log(_);
+		// const rule = (currentState, neighbors) => {
+		// 	if(currentState === ALIVE){
+		// 		return (neighbors === 2 || neighbors === 3) ? ALIVE : DEAD;
+		// 	}else{
+		// 		return neighbors === 3 ? ALIVE : DEAD;
+		// 	}
+		// };
+		renderer.init({
+			background: 0,
+			frameRate: 400,
+			height: +height,
+			width: +width
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
 
-	// 	const cur = 0, next = 1, ALIVE = 1, DEAD = 0;
+		const cur = 0, next = 1, ALIVE = 1, DEAD = 0;
 
-	// 	// Cell grid setup: 2D array of cells, each tracking `cur` and `next` state
-	// 	const cells = Array.from(Array(canvasWidth * canvasHeight)).map(() => [DEAD, DEAD]);
-	// 	// Initialize cells randomly or as desired (can be customized)
-	// 	cells.forEach(cell => cell[next] = Math.random() < 0.1 ? ALIVE : DEAD);
+		// Cell grid setup: 2D array of cells, each tracking `cur` and `next` state
+		const cells = Array.from(Array(canvasWidth * canvasHeight)).map(() => [DEAD, DEAD]);
+		// Initialize cells randomly or as desired (can be customized)
+		cells.forEach(cell => cell[next] = Math.random() < 0.1 ? ALIVE : DEAD);
 
-	// 	// Helper function to count neighbors for a cell at index i
-	// 	function neighbors(i){
-	// 		const x = i % canvasWidth;
-	// 		const y = Math.floor(i / canvasWidth);
-	// 		let count = 0;
-	// 		// Check all 8 neighbors, respecting canvas boundaries
-	// 		if(y > 0){
-	// 			if(x > 0){
-	// 				count += cells[i - canvasWidth - 1][cur];
-	// 			}
-	// 			count += cells[i - canvasWidth][cur];
-	// 			if(x < canvasWidth - 1){
-	// 				count += cells[i - canvasWidth + 1][cur];
-	// 			}
-	// 		}
-	// 		if(y < canvasHeight - 1){
-	// 			if(x > 0){
-	// 				count += cells[i + canvasWidth - 1][cur];
-	// 			}
-	// 			count += cells[i + canvasWidth][cur];
-	// 			if(x < canvasWidth - 1){
-	// 				count += cells[i + canvasWidth + 1][cur];
-	// 			}
-	// 		}
-	// 		if(x > 0){
-	// 			count += cells[i - 1][cur];
-	// 		}
-	// 		if(x < canvasWidth - 1){
-	// 			count += cells[i + 1][cur];
-	// 		}
-	// 		return count;
-	// 	}
+		renderer.stroke(255);
+		// renderer.background(0);
+		const bottom = cells.length / canvasWidth;
+		let row = 0;
+		renderer.frame = function(){
+			renderer.point(xMath.roll(canvasWidth), row);
+			if(row !== bottom){
+				row++;
+			}
+		};
 
-	// 	// Main draw function, called every frame
-	// 	renderer.stroke(255);
-	// 	renderer.draw = function(){
-	// 		renderer.background([0, 0, 255]);
-
-	// 		// Iterate over cells and render any alive cells
-	// 		cells.forEach((cell, i) => {
-	// 			if(cell[cur] === ALIVE){
-	// 				const x = i % canvasWidth;
-	// 				const y = Math.floor(i / canvasWidth);
-	// 				renderer.point(x, y);
-	// 			}
-
-	// 			// Use the rule function to determine next state
-	// 			const count = neighbors(i);
-	// 			const currentState = cell[cur];
-	// 			cell[next] = rule(currentState, count);
-	// 		});
-
-	// 		// Update cell states from next to cur for the next frame
-	// 		cells.forEach(cell => {
-	// 			cell[cur] = cell[next];
-	// 		});
-	// 	};
-
-	// 	renderer.loop();
-	// },
+		renderer.loop();
+	},
 	chaos: function(simplex='3'){
 		renderer.init({
 			frameRate: 400
@@ -459,7 +429,7 @@ const demos = {
 		}
 		let x = Math.random()*canvasWidth;
 		let y = Math.random()*canvasHeight;
-		renderer.draw = function(){
+		renderer.frame = function(){
 			const a = xMath.roll(attractors.length);
 			x += (attractors[a].x - x)/force;
 			y += (attractors[a].y - y)/force;
@@ -494,7 +464,7 @@ const demos = {
 
 		const numRows = buffers.readBuffer.length/canvasWidth;
 		const baseColor = renderer.color(255, 128, 96);
-		renderer.draw = function(){
+		renderer.frame = function(){
 			const curPixels = buffers.readBuffer;
 			const newPixels = buffers.writeBuffer;
 
@@ -517,7 +487,7 @@ const demos = {
 
 				// burn
 				// apply some different color functions
-				const newColor = xMath.addColors(
+				newPixels[p] = xMath.addColors(
 					xMath.decodeColor(curPixels[p-1]),
 					xMath.decodeColor(curPixels[p]),
 					xMath.decodeColor(curPixels[p+1]),
@@ -529,7 +499,6 @@ const demos = {
 					const avg = e/4.25;
 					return avg < 10 ? 0 : avg;
 				});
-				newPixels[p] = newColor;
 			}
 			buffers.flip();
 		};
@@ -652,7 +621,7 @@ const demos = {
 			}
 		}
 
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			if(Math.random()>0.95){
 				explode(xMath.range(0.001, canvasWidth), xMath.range(0.001, canvasHeight/2));
@@ -713,7 +682,7 @@ const demos = {
 		});
 
 		const force = -20;
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			for(let i=0; i<15; ++i){
 				const theta = xMath.range(-0.098, 0.098);
@@ -725,6 +694,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// graviton: function(){},
 	lens: function(lensWidth=150, lensDepth=30){
 		lensWidth = +lensWidth;
 		lensDepth = +lensDepth;
@@ -769,7 +739,7 @@ const demos = {
 			dx = 1,
 			dy = 2;
 
-		renderer.draw = function(){
+		renderer.frame = function(){
 			// log('update');
 			x += dx;
 			y += dy;
@@ -859,7 +829,7 @@ const demos = {
 		}
 
 		renderer.stroke(255);
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			cells.forEach((cell,i) => {
 				const cell_c = cells[i];
@@ -908,76 +878,90 @@ const demos = {
 		bg.update();
 		renderer.background(bg);
 	},
-	//plasma: function(){
-	//	const pjs = this.getProcessing();
-	//	const canvasWidth = this.getProperty('canvasWidth');
-	//	const canvasHeight = this.getProperty('canvasHeight');
-	//	const pitch = canvasWidth*4;
-	//	const ctxt = this.canvas.getContext('2d');
-	//	const burnBuffer = ctxt.createImageData(canvasWidth, canvasWidth);
-	//	const pixels = burnBuffer.data;
+	plasma: function(){
+		renderer.init({
+			background: 0,
+			// frameRate: 60,
+			height: 300,
+			width: 300
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const bg = renderer.createImage();
 
-	//	//const fastSin = new FastTrig().sin;
-	//	const fastSin = Math.sin;
-	//	function palette(i){
-	//		const r = 255*Math.pow(t, 0.2);
-	//		const g = 255*t*t;
-	//		const b = 255*t*t*t*t;
-	//		const a = 255*Math.pow(t, 0.2);
-	//		return [r, g, b, a];
-	//	}
-	//	// set alpha channel
-	//	for(const p=3;p<pixels.length;p+=4){
-	//		pixels[p] = 255;
-	//	}
-	//	ctxt.putImageData(burnBuffer, 0, 0);
+		const sin = {};
+		const colorPalette = {};
 
-	//	const pos1 = 0;
-	//	const pos2 = 0;
-	//	const pos3 = 0;
-	//	const pos4 = 0;
-	//	const tpos1 = 0;
-	//	const tpos2 = 0;
-	//	const tpos3 = 0;
-	//	const tpos4 = 0;
-	//	const lastRow = pixels.length-pitch;
-	//	const numRows = pixels.length/pitch;
-	//	this.draw = function(){
-	//		tpos4 = pos4;
-	//		tpos3 = pos3;
-	//		for(const i=0; i<pixels.length; ++i){
-	//			// skip first row, last row, first col, last col, alpha
-	//			if(p<pitch || p>=lastRow || p%pitch<4 || p%pitch>pitch-5 || p%4===3){
-	//				continue;
-	//			}
-	//			const row = p/pitch;
-	//			//rows
-	//			tpos1 = pos1 + 5;
-	//			tpos2 = pos2 + 3;
-	//			tpos3 &= 511;
-	//			tpos4 &= 511;
+		function paletteFunc(i){
+			const t = 1-(i/255);
+			// const b = 255*Math.pow(t, 0.2);
+			const b = 255*t;
+			const g = 255*t*t;
+			const r = 255*t*t*t*t;
+			// const r = i;
+			// const g = 255 - r + 1;
+			// const b = Math.abs(i - 128) * 2;
+			// const r = 255*Math.pow(t, 0.2);
+			// const g = 255*t*t;
+			// const b = 255*t*t*t*t;
+			const a = 255;
+			return [r, g, b, a];
+		}
+		for(let i=0; i<256; ++i){
+			colorPalette[i] = paletteFunc(i);
+		}
+		for(let i = 0; i < 512; ++i){
+			const rad =  (i * 0.703125) * 0.0174532; // 360 / 512 * degree to rad, 360 degrees spread over 512 values to be able to use AND 512-1 instead of using modulo 360
+			sin[i] = Math.sin(rad) * 1024; // using fixed point math with 1024 as base
+		}
+		// console.dir(colorPalette);
+		// console.dir(sin);
 
-	//			for(const j=0; j<canvasWidth; ++j,++i){
-	//				//cols
-	//				tpos1 &= 511;
-	//				tpos2 &= 511;
+		let pos1 = 0;
+		const pos2 = 0;
+		let pos3 = 0;
+		const pos4 = 0;
+		let tpos1 = 0;
+		let tpos2 = 0;
+		let tpos3 = 0;
+		let tpos4 = 0;
+		renderer.frame = function(){
+			tpos4 = pos4;
+			tpos3 = pos3;
 
-	//				//const x = fastSin[tpos1] + fastSin[tpos2] + fastSin[tpos3] + fastSin[tpos4];
-	//				const x = fastSin( tpos1 ) + fastSin( tpos2 ) + fastSin( tpos3 ) + fastSin( tpos4 );
-	//				pixels[i] = 128 + (x >> 4);
+			for(let i=0; i < canvasHeight; ++i){
+				// console.log(pos1, pos2, pos3, pos4);
+				tpos1 = pos1 + 5;
+				tpos2 = pos2 + 3;
 
-	//				tpos1 += 5;
-	//				tpos2 += 3;
-	//			}
-	//			tpos4 += 3;
-	//			tpos3 += 1;
-	//		}
-	//		pos1 += 9;
-	//		pos3 += 8;
-	//		ctxt.putImageData(burnBuffer, 0, 0);
-	//	};
-	//	pjs.loop();
-	//},
+				tpos3 &= 511;
+				tpos4 &= 511;
+
+				for(let j=0; j < canvasWidth; ++j){
+					tpos1 &= 511;
+					tpos2 &= 511;
+
+					const x = sin[tpos1] + sin[tpos2] + sin[tpos3] + sin[tpos4];
+					const index = 128 + (x >> 4);
+
+					// console.assert(index >= 0 && index <256, `index out of bounds: ${index}`);
+					// console.log(index, colorPalette[index]);
+					bg[i * canvasWidth + j] = colorPalette[index];
+
+					tpos1 += 5;
+					tpos2 += 3;
+				}
+				tpos4 += 3;
+				tpos3 += 1;
+			}
+			pos1 += 9;
+			pos3 += 8;
+
+			bg.update();
+			renderer.background(bg);
+		};
+		renderer.loop();
+	},
 	snow: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -990,7 +974,7 @@ const demos = {
 			}
 		});
 
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			// ttl, x, y, dx, dy, r, g, b, a
 			ps.createParticle(0, xMath.range(-canvasWidth/2, canvasWidth-1), 0, xMath.range(0, 0.25), xMath.range(0.4, 0.6), 255, 255, 255, xMath.range(96, 255));
@@ -1023,7 +1007,7 @@ const demos = {
 			this.a = (128*Math.max(1-(dist/penumbra), 0)) + (64*(vel/10)) + (64*Math.max(1-this.t++, 0));
 		});
 
-		renderer.draw = function(){
+		renderer.frame = function(){
 			renderer.background(0);
 			for(let i=0; i<20; ++i){
 				// ttl, x, y, dx, dy, r, g, b, a

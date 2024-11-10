@@ -157,7 +157,7 @@ function Renderer(canvas){
 				return new Image(img, pjs);
 			}
 		},
-		draw: {
+		frame: {
 			set: function(fn){
 				logger.debug('pjs.draw set');
 				Object.defineProperty(pjs, 'draw', {
@@ -174,7 +174,7 @@ function Renderer(canvas){
 		init: {
 			value: function(custom){
 				if(pjs !== undefined){
-					pjs.noLoop();
+					pjs.exit();
 				}
 				const config = Object.assign({}, defaultConfig, custom);
 				/* eslint-disable-next-line no-undef */
@@ -236,6 +236,10 @@ function Renderer(canvas){
 		pixelWidth: {
 			get: function(){
 				return 0;
+			}
+		},
+		showRuler: {
+			set: function(){
 			}
 		}
 	});
