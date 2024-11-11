@@ -303,37 +303,63 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	cell: function(_, width=200, height=200){
-		console.log(_);
-		// const rule = (currentState, neighbors) => {
-		// 	if(currentState === ALIVE){
-		// 		return (neighbors === 2 || neighbors === 3) ? ALIVE : DEAD;
-		// 	}else{
-		// 		return neighbors === 3 ? ALIVE : DEAD;
-		// 	}
-		// };
+	cell: function(rule=30, random=false, width=200, height=200){
 		renderer.init({
 			background: 0,
-			frameRate: 400,
 			height: +height,
 			width: +width
 		});
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
 
-		const cur = 0, next = 1, ALIVE = 1, DEAD = 0;
+		const ALIVE = 1, DEAD = 0;
 
-		// Cell grid setup: 2D array of cells, each tracking `cur` and `next` state
-		const cells = Array.from(Array(canvasWidth * canvasHeight)).map(() => [DEAD, DEAD]);
-		// Initialize cells randomly or as desired (can be customized)
-		cells.forEach(cell => cell[next] = Math.random() < 0.1 ? ALIVE : DEAD);
+		const cells = new Array(canvasWidth * canvasHeight).fill(DEAD);
+		const kernel = ((ruleNumber) => {
+			const ruleBinary = ruleNumber.toString(2).padStart(8, '0');
 
-		renderer.stroke(255);
-		// renderer.background(0);
-		const bottom = cells.length / canvasWidth;
+			const rules = [];
+			for (let i = 0; i < 8; ++i) {
+				if(+ruleBinary[7 - i]){
+					rules.push(i);
+				}
+			}
+
+			return (x, y) => {
+				const row = y-1;
+				const neighbors = parseInt([
+					cells[row * canvasWidth + (x-1)],
+					cells[row * canvasWidth + (x)],
+					cells[row * canvasWidth + (x+1)]
+				].join(''), 2);
+
+				return rules.some((pattern) => {
+					return neighbors === pattern;
+				}) ? ALIVE : DEAD;
+			};
+		})(+rule);
+
+		if(random && random !== 'false'){
+			for(let col=0; col<canvasWidth; ++col){
+				cells[col] = Math.random() > 0.50 ? ALIVE : DEAD;
+				renderer.point(col, 0);
+			}
+		}else{
+			cells[canvasWidth/2] = ALIVE;
+			renderer.point(canvasWidth/2, 0);
+		}
+
 		let row = 0;
+		const bottom = cells.length / canvasWidth;
+		renderer.stroke(255);
 		renderer.frame = function(){
-			renderer.point(xMath.roll(canvasWidth), row);
+			for(let col=0; col<canvasWidth; ++col){
+				const cell = kernel(col, row);
+				if(cell){
+					cells[row * canvasWidth + col] = cell;
+					renderer.point(col, row);
+				}
+			}
 			if(row !== bottom){
 				row++;
 			}
@@ -681,14 +707,15 @@ const demos = {
 			}
 		});
 
-		const force = -20;
+		const force = -20.01;
+		const baseColor = [255, 255, 255, 255];
 		renderer.frame = function(){
 			renderer.background(0);
 			for(let i=0; i<15; ++i){
 				const theta = xMath.range(-0.098, 0.098);
 				const r = xMath.range(force, 0.8*force);
 				// ttl, x, y, dx, dy, r, g, b, a
-				ps.createParticle(xMath.range(10, 30)*-r, canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, 0, 0, 0, 0);
+				ps.createParticle(xMath.range(10, 30.01) * -r, canvasWidth/2, canvasHeight-20, Math.sin(theta)*r, Math.cos(theta)*r, ...baseColor);
 			}
 			ps.render();
 		};
@@ -894,16 +921,21 @@ const demos = {
 
 		function paletteFunc(i){
 			const t = 1-(i/255);
+
 			// const b = 255*Math.pow(t, 0.2);
+			// const b = 255*Math.pow(t, 0.5);
 			const b = 255*t;
 			const g = 255*t*t;
 			const r = 255*t*t*t*t;
+
 			// const r = i;
 			// const g = 255 - r + 1;
 			// const b = Math.abs(i - 128) * 2;
+
 			// const r = 255*Math.pow(t, 0.2);
 			// const g = 255*t*t;
 			// const b = 255*t*t*t*t;
+
 			const a = 255;
 			return [r, g, b, a];
 		}
@@ -918,16 +950,16 @@ const demos = {
 		// console.dir(sin);
 
 		let pos1 = 0;
-		const pos2 = 0;
+		let pos2 = 0;
 		let pos3 = 0;
-		const pos4 = 0;
+		let pos4 = 0;
 		let tpos1 = 0;
 		let tpos2 = 0;
 		let tpos3 = 0;
 		let tpos4 = 0;
 		renderer.frame = function(){
-			tpos4 = pos4;
 			tpos3 = pos3;
+			tpos4 = pos4;
 
 			for(let i=0; i < canvasHeight; ++i){
 				// console.log(pos1, pos2, pos3, pos4);
@@ -941,6 +973,7 @@ const demos = {
 					tpos1 &= 511;
 					tpos2 &= 511;
 
+					// renderer.point();
 					const x = sin[tpos1] + sin[tpos2] + sin[tpos3] + sin[tpos4];
 					const index = 128 + (x >> 4);
 
@@ -951,11 +984,14 @@ const demos = {
 					tpos1 += 5;
 					tpos2 += 3;
 				}
-				tpos4 += 3;
 				tpos3 += 1;
+				tpos4 += 3;
 			}
 			pos1 += 9;
 			pos3 += 8;
+
+			// pos2 += 3;
+			// pos4 += 5;
 
 			bg.update();
 			renderer.background(bg);
@@ -1001,9 +1037,11 @@ const demos = {
 			const vel = Math.hypot(this.dx, this.dy);
 			const dist = Math.min(xMath.distance(this.x, this.y, centerX, centerY), centerX);
 			// dimmer when:
-			// - further
-			// - slower
+			// - slower & further
+			// - faster & closer
 			// - older
+			//
+			// the slower the less effect that distance has
 			this.a = (128*Math.max(1-(dist/penumbra), 0)) + (64*(vel/10)) + (64*Math.max(1-this.t++, 0));
 		});
 

@@ -183,10 +183,6 @@ function Renderer(canvas){
 					logger.debug(`canvas width (${canvas.width}) height (${canvas.height})`);
 
 					Object.defineProperties(processingjs, {
-						draw: {
-							value: function(){},
-							writable: true
-						},
 						keyPressed: {
 							value: function(){
 								switch(processingjs.keyCode){
