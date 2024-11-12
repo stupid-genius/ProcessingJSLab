@@ -58,77 +58,84 @@ const demos = {
 	//	};
 	//	renderer.loop();
 	//},
-	// ants: function(){
-	// 	const canvasWidth = renderer.width;
-	// 	const canvasHeight = renderer.height;
+	ants: function(){
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
 
-	// 	const MAX_DX = 5;
-	// 	const ACCEL_RATE = 0.5;
-	// 	const TURN_RATE = 0.1;
-	// 	const ps = new Particles(renderer, function(){
-	// 		this.state = 0;
+		const NUM_ANTS = 200;
+		const MAX_SPEED = 1;
+		// const TURN_RATE = 0.0005;
 
-	// 		this.dddx = xMath.range(0, 2)*ACCEL_RATE;
-	// 		this.dddy = xMath.range(0, 2)*ACCEL_RATE;
+		const ps = new Particles(renderer, function(ps){
+			const head = ps.list;
+			let cur = head;
+			while(cur.active){
+				if(cur === this){
+					cur = cur.next;
+					if(cur === head){
+						break;
+					}
+					continue;
+				}
 
-	// 		this.ddx = xMath.range(-TURN_RATE, TURN_RATE)*this.dddx;
-	// 		this.ddy = xMath.range(-TURN_RATE, TURN_RATE)*this.dddy;
-	// 		const xSpeed = Math.abs(this.dx)-MAX_DX;
-	// 		const ySpeed = Math.abs(this.dy)-MAX_DX;
-	// 		if(xSpeed > 0){
-	// 			this.ddx+=-this.dx*ACCEL_RATE;
-	// 		}
-	// 		if(ySpeed > 0){
-	// 			this.ddy+=-this.dy*ACCEL_RATE;
-	// 		}
-	//
-	// if(Math.random() > 0.75){
-	// 	const theta = Math.atan2(this.dy, this.dx) + xMath.range(-0.01, 0.01);
-	// 	const force = xMath.range(-0.001, 0.001);
-	// 	distraction.x = force * Math.cos(theta) - this.dx;
-	// 	distraction.y = force * Math.sin(theta) - this.dy;
-	// }
+				cur = cur.next;
+				if(cur === head){
+					break;
+				}
+			}
 
-	// 		// don't control here
-	// 		this.dx+=this.ddx;
-	// 		this.dy+=this.ddy;
-	// 		// shh...just let it happen...
-	// 		this.x+=this.dx;
-	// 		this.y+=this.dy;
+			// Apply forces to acceleration
+			this.ddx = xMath.range(-1.01, 1);
+			this.ddy = xMath.range(-1.01, 1);
 
-	// 		if(this.x>=canvasWidth-1){
-	// 			this.x=canvasWidth-1;
-	// 			this.dx*=-1;
-	// 		}else if(this.x<0){
-	// 			this.x=0;
-	// 			this.dx*=-1;
-	// 		}
-	// 		if(this.y>=canvasHeight-1){
-	// 			this.y=canvasHeight-1;
-	// 			this.dy*=-1;
-	// 		}else if(this.y<0){
-	// 			this.y=0;
-	// 			this.dy*=-1;
-	// 		}
-	// 	});
+			this.dx += this.ddx;
+			this.dy += this.ddy;
 
-	// 	for(let i=0; i<10; ++i){
-	// 		// ttl, x, y, dx, dy, r, g, b, a
-	// 		ps.createParticle(0, canvasWidth/2, canvasHeight/2, xMath.range(-0.5, 0.5), xMath.range(-0.5, 0.5), 255, 255, 255, 255);
-	// 	}
+			const speed = Math.hypot(this.dx, this.dy);
+			if(speed > MAX_SPEED){
+				this.dx = (this.dx / speed) * MAX_SPEED;
+				this.dy = (this.dy / speed) * MAX_SPEED;
+			}
 
-	// 	renderer.stroke(0, 0, 0, 255);
-	// 	renderer.frame = function(){
-	// 		renderer.background(0);
-	// 		ps.render();
-	// 	};
-	// 	renderer.loop();
-	// },
+			const x = this.x - (3 * this.dx);
+			const y = this.y - (3 * this.dy);
+			this.x += this.dx;
+			this.y += this.dy;
+			renderer.line(this.x, this.y, x, y);
+
+			if(this.x >= canvasWidth - 1){
+				this.x = canvasWidth - 1;
+				this.dx *= -1;
+			}else if(this.x < 0){
+				this.x = 0;
+				this.dx *= -1;
+			}
+			if(this.y >= canvasHeight - 1){
+				this.y = canvasHeight - 1;
+				this.dy *= -1;
+			}else if (this.y < 0){
+				this.y = 0;
+				this.dy *= -1;
+			}
+		});
+
+		for(let i=0; i<NUM_ANTS; ++i){
+			// ttl, x, y, dx, dy, r, g, b, a
+			ps.createParticle(0, xMath.range(0.0001, canvasWidth), xMath.range(0.0001, canvasHeight), 0, 0, ...[207, 16, 32]);
+		}
+
+		renderer.stroke(0, 0, 0, 255);
+		renderer.frame = function(){
+			renderer.background(0);
+			ps.render();
+		};
+		renderer.loop();
+	},
 	boids: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
-		const middleX = canvasWidth/2;
-		const middleY = canvasHeight/2;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
 
 		const NUM_BOIDS = 200;
 		const MAX_SPEED = 3;
@@ -141,15 +148,19 @@ const demos = {
 		const SEPARATION_STRENGTH = 1;
 		const ATTENTION_STRENGTH = 0.75;
 
-		const ps = new Particles(renderer, function(ps){
-			const alignment = {x: 0, y: 0};
-			const cohesion = {x: 0, y: 0};
-			const separation = {x: 0, y: 0};
-			const distraction = {x: 0, y: 0};
+		const ps = new Particles(renderer, function(pjs){
+			let alignmentX = 0;
+			let alignmentY = 0;
+			let cohesionX = 0;
+			let cohesionY = 0;
+			let separationX = 0;
+			let separationY = 0;
+			let distractionX = 0;
+			let distractionY = 0;
 			let total = 0;
 			let separationCount = 0;
 
-			const head = ps.list;
+			const head = pjs.list;
 			let cur = head;
 			while(cur.active){
 				if(cur === this){
@@ -163,18 +174,18 @@ const demos = {
 
 				// Alignment
 				if(distance < NEIGHBOR_RADIUS){
-					alignment.x += cur.dx;
-					alignment.y += cur.dy;
-					cohesion.x += cur.x;
-					cohesion.y += cur.y;
+					alignmentX += cur.dx;
+					alignmentY += cur.dy;
+					cohesionX += cur.x;
+					cohesionY += cur.y;
 					total++;
 				}
 
 				// Separation
 				if(distance < SEPARATION_RADIUS){
 					const force = (SEPARATION_RADIUS - distance) / SEPARATION_RADIUS;
-					separation.x += (this.x - cur.x) * force;
-					separation.y += (this.y - cur.y) * force;
+					separationX += (this.x - cur.x) * force;
+					separationY += (this.y - cur.y) * force;
 					separationCount++;
 				}
 				cur = cur.next;
@@ -185,38 +196,38 @@ const demos = {
 
 			if(total > 0){
 				// Calculate alignment (average heading)
-				alignment.x /= total;
-				alignment.y /= total;
-				const alignmentMag = Math.hypot(alignment.x, alignment.y);
+				alignmentX /= total;
+				alignmentY /= total;
+				const alignmentMag = Math.hypot(alignmentX, alignmentY);
 				if(alignmentMag > 0){
-					alignment.x = (alignment.x / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
-					alignment.y = (alignment.y / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+					alignmentX = (alignmentX / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+					alignmentY = (alignmentY / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
 				}
 
 				// Calculate cohesion (move toward center of mass)
-				cohesion.x = (cohesion.x / total - this.x) * TURN_RATE * COHESION_STRENGTH;
-				cohesion.y = (cohesion.y / total - this.y) * TURN_RATE * COHESION_STRENGTH;
+				cohesionX = (cohesionX / total - this.x) * TURN_RATE * COHESION_STRENGTH;
+				cohesionY = (cohesionY / total - this.y) * TURN_RATE * COHESION_STRENGTH;
 			}
 			if(separationCount > 0){
 				// Calculate separation (avoid crowding)
-				separation.x /= separationCount;
-				separation.y /= separationCount;
-				const separationMag = Math.hypot(separation.x, separation.y);
+				separationX /= separationCount;
+				separationY /= separationCount;
+				const separationMag = Math.hypot(separationX, separationY);
 				if(separationMag > 0){
-					separation.x = (separation.x / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
-					separation.y = (separation.y / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+					separationX = (separationX / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+					separationY = (separationY / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
 				}
 			}
 			if(Math.random() > ATTENTION_STRENGTH){
 				const theta = Math.atan2(this.dy, this.dx) + xMath.range(-0.1, 0.1);
 				const force = Math.hypot(this.dx, this.dy);
-				distraction.x = force * Math.cos(theta) - this.dx;
-				distraction.y = force * Math.sin(theta) - this.dy;
+				distractionX = force * Math.cos(theta) - this.dx;
+				distractionY = force * Math.sin(theta) - this.dy;
 			}
 
 			// Apply forces to acceleration
-			this.ddx = alignment.x + cohesion.x + separation.x + distraction.x;
-			this.ddy = alignment.y + cohesion.y + separation.y + distraction.y;
+			this.ddx = alignmentX + cohesionX + separationX + distractionX;
+			this.ddy = alignmentY + cohesionY + separationY + distractionY;
 
 			this.dx += this.ddx;
 			this.dy += this.ddy;
@@ -254,7 +265,7 @@ const demos = {
 			const force = xMath.range(0.001, 1) * MAX_SPEED;
 			const theta = xMath.range(-0.1, 0.1);
 			// ttl, x, y, dx, dy, r, g, b, a
-			ps.createParticle(0, xMath.range(middleX-10.01, middleX+10), xMath.range(middleY-10.01, middleY+10), force * Math.cos(theta+direction), force * Math.sin(theta+direction), ...xMath.randomColor());
+			ps.createParticle(0, xMath.range(centerX-10.01, centerX+10), xMath.range(centerY-10.01, centerY+10), force * Math.cos(theta+direction), force * Math.sin(theta+direction), ...xMath.randomColor());
 		}
 
 		renderer.stroke(0, 0, 0, 255);
@@ -306,6 +317,7 @@ const demos = {
 	cell: function(rule=30, random=false, width=200, height=200){
 		renderer.init({
 			background: 0,
+			frameRate: 400,
 			height: +height,
 			width: +width
 		});
@@ -326,11 +338,11 @@ const demos = {
 			}
 
 			return (x, y) => {
-				const row = y-1;
+				const index = (y-1) * canvasWidth + x;
 				const neighbors = parseInt([
-					cells[row * canvasWidth + (x-1)],
-					cells[row * canvasWidth + (x)],
-					cells[row * canvasWidth + (x+1)]
+					cells[index - 1],
+					cells[index],
+					cells[index + 1]
 				].join(''), 2);
 
 				return rules.some((pattern) => {
@@ -339,6 +351,7 @@ const demos = {
 			};
 		})(+rule);
 
+		renderer.stroke(255);
 		if(random && random !== 'false'){
 			for(let col=0; col<canvasWidth; ++col){
 				cells[col] = Math.random() > 0.50 ? ALIVE : DEAD;
@@ -351,7 +364,6 @@ const demos = {
 
 		let row = 0;
 		const bottom = cells.length / canvasWidth;
-		renderer.stroke(255);
 		renderer.frame = function(){
 			for(let col=0; col<canvasWidth; ++col){
 				const cell = kernel(col, row);
@@ -535,8 +547,8 @@ const demos = {
 		const canvasHeight = renderer.height;
 		const red = new Particles(renderer, function(){
 			// update
-			this.dx+=red.acceleration[0];
-			this.dy+=red.acceleration[1];
+			this.dx+=red.ACCELERATION[0];
+			this.dy+=red.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -548,8 +560,8 @@ const demos = {
 		});
 		const blue = new Particles(renderer, function(){
 			// update
-			this.dx+=blue.acceleration[0];
-			this.dy+=blue.acceleration[1];
+			this.dx+=blue.ACCELERATION[0];
+			this.dy+=blue.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -561,8 +573,8 @@ const demos = {
 		});
 		const green = new Particles(renderer, function(){
 			// update
-			this.dx+=green.acceleration[0];
-			this.dy+=green.acceleration[1];
+			this.dx+=green.ACCELERATION[0];
+			this.dy+=green.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -574,8 +586,8 @@ const demos = {
 		});
 		const yellow = new Particles(renderer, function(){
 			// update
-			this.dx+=yellow.acceleration[0];
-			this.dy+=yellow.acceleration[1];
+			this.dx+=yellow.ACCELERATION[0];
+			this.dy+=yellow.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -587,8 +599,8 @@ const demos = {
 		});
 		const orange = new Particles(renderer, function(){
 			// update
-			this.dx+=orange.acceleration[0];
-			this.dy+=orange.acceleration[1];
+			this.dx+=orange.ACCELERATION[0];
+			this.dy+=orange.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -600,8 +612,8 @@ const demos = {
 		});
 		const purple = new Particles(renderer, function(){
 			// update
-			this.dx+=purple.acceleration[0];
-			this.dy+=purple.acceleration[1];
+			this.dx+=purple.ACCELERATION[0];
+			this.dy+=purple.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -611,12 +623,12 @@ const demos = {
 			this.g = 255*t*t*t*t;
 			this.a = 255*t;
 		});
-		red.acceleration = [0, 0.15];
-		blue.acceleration = [0, 0.15];
-		green.acceleration = [0, 0.15];
-		yellow.acceleration = [0, 0.15];
-		orange.acceleration = [0, 0.15];
-		purple.acceleration = [0, 0.15];
+		red.ACCELERATION = [0, 0.15];
+		blue.ACCELERATION = [0, 0.15];
+		green.ACCELERATION = [0, 0.15];
+		yellow.ACCELERATION = [0, 0.15];
+		orange.ACCELERATION = [0, 0.15];
+		purple.ACCELERATION = [0, 0.15];
 
 		function explode(x, y){
 			let ps;
@@ -666,8 +678,8 @@ const demos = {
 		const canvasHeight = renderer.height;
 		const ps = new Particles(renderer, function(){
 			// update
-			this.dx+=ps.acceleration[0];
-			this.dy+=ps.acceleration[1];
+			this.dx+=ps.ACCELERATION[0];
+			this.dy+=ps.ACCELERATION[1];
 			this.x+=this.dx;
 			this.y+=this.dy;
 
@@ -692,7 +704,7 @@ const demos = {
 				}else{
 					this.y=canvasHeight-2;
 				}
-				this.dy*=-1.2*Math.random()*ps.elasticity;
+				this.dy*=-1.2*Math.random()*ps.ELASTICITY;
 				if(Math.random()<0.5){
 					this.dx-=this.dy;
 				}else{
@@ -700,7 +712,7 @@ const demos = {
 				}
 			}else if(this.y<0){
 				this.y=0;
-				this.dy*=-1*ps.elasticity;
+				this.dy*=-1*ps.ELASTICITY;
 			}
 			if(this.y===canvasHeight-1){
 				this.active = false;
@@ -721,7 +733,96 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// graviton: function(){},
+	graviton: function(){
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
+
+		const NUM_PARTICLES = 100;
+		const MAX_SPEED = 10;
+
+		const ps = new Particles(renderer, function(pjs){
+			// center of mass
+			let comX = 0;
+			let comY = 0;
+
+			const head = pjs.list;
+			let cur = head;
+			while(cur.active){
+				if(cur === this){
+					cur = cur.next;
+					if(cur === head){
+						break;
+					}
+					continue;
+				}
+				// const distance = Math.hypot(this.x - cur.x, this.y - cur.y);
+
+				comX += cur.x;
+				comY += cur.y;
+
+				cur = cur.next;
+				if(cur === head){
+					break;
+				}
+			}
+
+			// console.log(ps.count);
+			comX = (comX / ps.count - this.x) * 0.0001;
+			comY = (comY / ps.count - this.y) * 0.0001;
+
+			// this.ddx = 0;
+			// this.ddy = 0;
+			this.ddx = comX;
+			this.ddy = comY;
+
+			this.dx += this.ddx;
+			this.dy += this.ddy;
+
+			const speed = Math.hypot(this.dx, this.dy);
+			if(speed > MAX_SPEED){
+				this.dx = (this.dx / speed) * MAX_SPEED;
+				this.dy = (this.dy / speed) * MAX_SPEED;
+			}
+
+			// const x = this.x - (3 * this.dx);
+			// const y = this.y - (3 * this.dy);
+			this.x += this.dx;
+			this.y += this.dy;
+			// renderer.line(this.x, this.y, x, y);
+
+			if(this.x >= canvasWidth - 1){
+				this.x = canvasWidth - 1;
+				this.dx *= -1;
+			}else if(this.x < 0){
+				this.x = 0;
+				this.dx *= -1;
+			}
+			if(this.y >= canvasHeight - 1){
+				this.y = canvasHeight - 1;
+				this.dy *= -1;
+			}else if (this.y < 0){
+				this.y = 0;
+				this.dy *= -1;
+			}
+		});
+
+		for(let i=0; i<NUM_PARTICLES; ++i){
+			// const force = xMath.range(0.001, 1) * MAX_SPEED;
+			// const theta = xMath.range(-0.1, 0.1);
+			// ttl, x, y, dx, dy, r, g, b, a
+			// ps.createParticle(0, xMath.range(centerX-10.01, centerX+10), xMath.range(centerY-10.01, centerY+10), xMath.range(-5.01, 5), xMath.range(-5.01, 5), ...[255, 255, 196]);
+			ps.createParticle(0, xMath.roll(canvasWidth), xMath.roll(canvasHeight), xMath.range(-5.01, 5), xMath.range(-5.01, 5), ...[255, 255, 196]);
+		}
+
+		renderer.stroke(0, 0, 0, 255);
+		renderer.frame = function(){
+			renderer.background(0);
+			ps.render();
+		};
+		renderer.loop();
+	},
 	lens: function(lensWidth=150, lensDepth=30){
 		lensWidth = +lensWidth;
 		lensDepth = +lensDepth;
@@ -904,6 +1005,61 @@ const demos = {
 		}
 		bg.update();
 		renderer.background(bg);
+
+		// const tailStartX = renderer.width/2;
+		// const tailStartY = renderer.height/2;
+		// const tailEndX = renderer.width/2 + 100;
+		// const tailEndY = renderer.height/2 + 100;
+
+		// renderer.frame = () => {
+		// 	renderer.background(0);
+		// 	const deltaX = tailStartX - tailEndX;
+		// 	const deltaY = tailStartY - tailEndY;
+		// 	const length = Math.hypot(deltaX, deltaY);
+		// 	const CW = length + Math.PI/10 * renderer.frameCount;
+		// 	const perpX = -deltaY / length;
+		// 	const perpY = deltaX / length;
+
+		// 	const ctrl1X = 50 * Math.cos(CW + Math.PI/2) + tailStartX-(0.33*deltaX);
+		// 	const ctrl1Y = 50 * Math.sin(CW + Math.PI/2) + tailStartY-(0.33*deltaY);
+		// 	const ctrl2X = 25 * Math.cos(CW) + tailStartX-(0.66*deltaX);
+		// 	const ctrl2Y = 25 * Math.sin(CW) + tailStartY-(0.66*deltaY);
+		// 	const tail2X = tailEndX + perpX * Math.sin(Math.PI/10 * renderer.frameCount) * 50;
+		// 	const tail2Y = tailEndY + perpY * Math.sin(Math.PI/10 * renderer.frameCount) * 50;
+
+		// 	renderer.fill(0,0,0,0);
+		// 	renderer.stroke(255, 0, 0, 255);
+		// 	renderer.line(tailStartX, tailStartY, tailEndX, tailEndY);
+
+		// 	renderer.stroke(255, 255, 255, 255);
+		// 	renderer.ellipse(
+		// 		ctrl1X,
+		// 		ctrl1Y,
+		// 		3, 3
+		// 	);
+		// 	renderer.ellipse(
+		// 		ctrl2X,
+		// 		ctrl2Y,
+		// 		3, 3
+		// 	);
+		// 	renderer.ellipse(
+		// 		tail2X,
+		// 		tail2Y,
+		// 		3, 3
+		// 	);
+
+		// 	renderer.bezier(
+		// 		tailStartX,
+		// 		tailStartY,
+		// 		ctrl1X,
+		// 		ctrl1Y,
+		// 		ctrl2X,
+		// 		ctrl2Y,
+		// 		tail2X,
+		// 		tail2Y,
+		// 	);
+		// };
+		// renderer.loop();
 	},
 	plasma: function(){
 		renderer.init({
@@ -995,6 +1151,225 @@ const demos = {
 
 			bg.update();
 			renderer.background(bg);
+		};
+		renderer.loop();
+	},
+	rod: function(){
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
+
+		let eggX = canvasWidth/2 + xMath.range(-100, 100.01),
+			eggY = canvasWidth/2 + xMath.range(-100, 100.01),
+			eggDx = xMath.roll(-3.01, 3),
+			eggDy = xMath.roll(-3.01, 3);
+		let swimX, swimY;
+		const radius = 20;
+		const tailLength = 12;
+		const tailFreq = 5;
+
+		const NUM_BOIDS = 200;
+		const MAX_SPEED = 3;
+		const TURN_RATE = 0.0005;
+		const NEIGHBOR_RADIUS = 100;
+		const SEPARATION_RADIUS = 40;
+
+		const ALIGNMENT_STRENGTH = 0.75;
+		const COHESION_STRENGTH = 0.5;
+		const SEPARATION_STRENGTH = 3;
+		const ATTENTION_STRENGTH = 0.66;
+
+		const ps = new Particles(renderer, function(ps){
+			const alignment = {x: 0, y: 0};
+			const cohesion = {x: 0, y: 0};
+			const separation = {x: 0, y: 0};
+			const distraction = {x: 0, y: 0};
+			let total = 0;
+			let separationCount = 0;
+
+			const head = ps.list;
+			let cur = head;
+			while(cur.active){
+				if(cur === this){
+					cur = cur.next;
+					if(cur === head){
+						break;
+					}
+					continue;
+				}
+				const distance = Math.hypot(this.x - cur.x, this.y - cur.y);
+
+				// Alignment
+				if(distance < NEIGHBOR_RADIUS){
+					alignment.x += cur.dx;
+					alignment.y += cur.dy;
+					cohesion.x += cur.x;
+					cohesion.y += cur.y;
+					total++;
+				}
+
+				// Separation
+				if(distance < SEPARATION_RADIUS){
+					const force = (SEPARATION_RADIUS - distance) / SEPARATION_RADIUS;
+					separation.x += (this.x - cur.x) * force;
+					separation.y += (this.y - cur.y) * force;
+					separationCount++;
+				}
+				cur = cur.next;
+				if(cur === head){
+					break;
+				}
+			}
+			swimX += this.x;
+			swimY += this.y;
+
+			if(total > 0){
+				// Calculate alignment (average heading)
+				alignment.x /= total;
+				alignment.y /= total;
+				const alignmentMag = Math.hypot(alignment.x, alignment.y);
+				if(alignmentMag > 0){
+					alignment.x = (alignment.x / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+					alignment.y = (alignment.y / alignmentMag) * TURN_RATE * ALIGNMENT_STRENGTH;
+				}
+
+				// Calculate cohesion (move toward center of mass)
+				cohesion.x = (cohesion.x / total - this.x) * TURN_RATE * COHESION_STRENGTH;
+				cohesion.y = (cohesion.y / total - this.y) * TURN_RATE * COHESION_STRENGTH;
+			}
+			if(separationCount > 0){
+				// Calculate separation (avoid crowding)
+				separation.x /= separationCount;
+				separation.y /= separationCount;
+				const separationMag = Math.hypot(separation.x, separation.y);
+				if(separationMag > 0){
+					separation.x = (separation.x / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+					separation.y = (separation.y / separationMag) * TURN_RATE * SEPARATION_STRENGTH;
+				}
+			}
+			if(Math.random() > ATTENTION_STRENGTH){
+				const theta = Math.atan2(this.dy, this.dx) + xMath.range(-0.1, 0.1);
+				const force = Math.hypot(this.dx, this.dy);
+				distraction.x = force * Math.cos(theta) - this.dx;
+				distraction.y = force * Math.sin(theta) - this.dy;
+			}
+
+			// Apply forces to acceleration
+			this.ddx = alignment.x + cohesion.x + separation.x + distraction.x + (eggX - this.x) * 0.0001;
+			this.ddy = alignment.y + cohesion.y + separation.y + distraction.y + (eggY - this.y) * 0.0001;
+			const eggProx = xMath.distance(this.x, this.y, eggX, eggY);
+			if(eggProx < 50){
+				this.ddx += (eggX - this.x) * 0.01;
+				this.ddy += (eggY - this.y) * 0.01;
+			}
+
+			this.dx += this.ddx;
+			this.dy += this.ddy;
+
+			const speed = Math.hypot(this.dx, this.dy);
+			if(speed > MAX_SPEED){
+				this.dx = (this.dx / speed) * MAX_SPEED;
+				this.dy = (this.dy / speed) * MAX_SPEED;
+			}
+
+			this.x += this.dx;
+			this.y += this.dy;
+
+			const theta = xMath.direction(this.x, this.y, this.x-this.dx, this.y-this.dy);
+			const tailEndX = this.x + tailLength * Math.cos(theta);
+			const tailEndY = this.y + tailLength * Math.sin(theta);
+			const deltaX = this.x - tailEndX;
+			const deltaY = this.y - tailEndY;
+			const length = Math.hypot(deltaX, deltaY);
+			const CW = length + Math.PI/tailFreq * renderer.frameCount;
+			const perpX = -deltaY / length;
+			const perpY = deltaX / length;
+
+			const ctrl1X = 3 * Math.cos(CW + Math.PI/2) + this.x-(0.33*deltaX);
+			const ctrl1Y = 3 * Math.sin(CW + Math.PI/2) + this.y-(0.33*deltaY);
+			const ctrl2X = 2 * Math.cos(CW) + this.x-(0.66*deltaX);
+			const ctrl2Y = 2 * Math.sin(CW) + this.y-(0.66*deltaY);
+			const tailX = tailEndX + perpX * Math.sin(Math.PI/tailFreq * renderer.frameCount) * 3;
+			const tailY = tailEndY + perpY * Math.sin(Math.PI/tailFreq * renderer.frameCount) * 3;
+			renderer.bezier(
+				this.x,
+				this.y,
+				ctrl1X,
+				ctrl1Y,
+				ctrl2X,
+				ctrl2Y,
+				tailX,
+				tailY
+			);
+
+			if(this.x >= canvasWidth - 1){
+				this.x = canvasWidth - 1;
+				this.dx *= -1;
+			}else if(this.x < 0){
+				this.x = 0;
+				this.dx *= -1;
+			}
+			if(this.y >= canvasHeight - 1){
+				this.y = canvasHeight - 1;
+				this.dy *= -1;
+			}else if (this.y < 0){
+				this.y = 0;
+				this.dy *= -1;
+			}
+		});
+		ps.SHAPE = 'ellipse';
+
+		const direction = xMath.range(0, 2*Math.PI);
+		for(let i=0; i<NUM_BOIDS; ++i){
+			const force = xMath.range(0.001, 1) * MAX_SPEED;
+			const theta = xMath.range(-0.1, 0.1);
+			// ttl, x, y, dx, dy, r, g, b, a
+			ps.createParticle(0, xMath.range(centerX-10.01, centerX+10), xMath.range(centerY-10.01, centerY+10), force * Math.cos(theta+direction), force * Math.sin(theta+direction), ...[255, 255, 255, 255]);
+		}
+
+		renderer.frame = function(){
+			swimX = 0;
+			swimY = 0;
+			renderer.background(0);
+
+			renderer.fill(0,0,0,0);
+			renderer.stroke(255, 255, 255, 255);
+			ps.render();
+
+			swimX /= ps.count;
+			swimY /= ps.count;
+			eggDx += -(swimX - eggX) * 0.0001 + (centerX - eggX) * 0.0001;
+			eggDy += -(swimY - eggY) * 0.0001 + (centerY - eggY) * 0.0001;
+			const speed = Math.hypot(eggDx, eggDy);
+			if(speed > MAX_SPEED*1.4){
+				eggDx = (eggDx / speed) * MAX_SPEED*1.4;
+				eggDy = (eggDy / speed) * MAX_SPEED*1.4;
+			}
+
+			eggX += eggDx;
+			eggY += eggDy;
+
+			if(eggX < 0){
+				eggX = 0;
+				eggDx = -eggDx;
+			}
+			if(eggX > canvasWidth-radius){
+				eggX = canvasWidth-radius;
+				eggDx = -eggDx;
+			}
+			if(eggY < 0){
+				eggY = 0;
+				eggDy = -eggDy;
+			}
+			if(eggY > canvasHeight-radius){
+				eggY = canvasHeight-radius;
+				eggDy = -eggDy;
+			}
+
+			renderer.stroke(196, 128, 196);
+			renderer.fill(255, 128, 164, 128);
+			renderer.ellipse(eggX, eggY, radius, radius);
 		};
 		renderer.loop();
 	},

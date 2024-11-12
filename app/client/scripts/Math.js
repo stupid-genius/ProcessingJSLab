@@ -49,13 +49,30 @@ const xMath = Object.freeze({
 			(ARGB >>> 24)
 		];
 	},
+	direction: (x, y, x2, y2) => {
+		return Math.atan2(y2-y, x2-x);
+	},
 	distance: (x, y, x2, y2) => {
 		return Math.hypot(Math.abs(x2-x), Math.abs(y2-y));
 	},
-	fastInvSqrt: () => {
-		return 1;
+	// this is not fast, at all!
+	fastInvSqrt: (x) => {
+		const threeHalfs = 1.5;
+
+		const i = new Float32Array([x]);
+		const y = new Float32Array([x]);
+		const i32 = new Int32Array(i.buffer);
+
+		i32[0] = 0x5f3759df - (i32[0] >> 1);
+		y[0] = i[0];
+		y[0] = y[0] * (threeHalfs - (x * 0.5 * y[0] * y[0]));
+
+		return y[0];
 	},
 	fastTrig: FastTrig(),
+	invSqrt: (x) => {
+		return 1 / Math.sqrt(x);
+	},
 	randomColor: (alpha=false) => {
 		const color = Array.from({length: 3}, () => xMath.roll(255));
 		color.push(alpha ? xMath.roll(255) : 255);

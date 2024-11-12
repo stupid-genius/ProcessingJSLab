@@ -25,9 +25,9 @@ function Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na){
 	});
 	this.activate(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 }
-function Particles(renderer, renderFn){
+function ParticleField(renderer, renderFn){
 	if(!new.target){
-		return new Particles(...arguments);
+		return new ParticleField(...arguments);
 	}
 
 	const particles = [];
@@ -50,10 +50,10 @@ function Particles(renderer, renderFn){
 		}
 	});
 }
-Object.defineProperties(Particles, {
+Object.defineProperties(ParticleField, {
 	MAX_COUNT: {
 		value: 3000,
 		writable: true
 	}
 });
-module.exports = Particles;
+module.exports = ParticleField;

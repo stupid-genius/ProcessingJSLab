@@ -12,8 +12,9 @@ function Particles(pjs, fn){
 	head.active = false;
 	head.prev.active = false;
 
-	this.acceleration = [0, 0.25];
-	this.elasticity = 0.2;
+	this.ACCELERATION = [0, 0.25];
+	this.ELASTICITY = 0.2;
+	this.SHAPE = 'point';
 	this.MAX_COUNT = 3000;
 
 	Object.defineProperties(this, {
@@ -53,7 +54,7 @@ function Particles(pjs, fn){
 				while(cur.active){
 					fn.call(cur, this);
 					pjs.stroke(cur.r, cur.g, cur.b, cur.a);
-					pjs.point(cur.x, cur.y);
+					pjs[this.SHAPE](cur.x, cur.y, 2, 2);
 
 					const dead = cur;
 					if(cur.ttl>0 && ++cur.t>=cur.ttl){
