@@ -39,7 +39,7 @@ const registry = Object.freeze({
 	ls: {
 		func: function(){
 			this.echo('Available demos:');
-			Object.keys(demos).forEach(demo => this.echo(demo));
+			Object.keys(demos).filter(e => e !== 'rod').forEach(demo => this.echo(demo));
 		},
 		man: 'List available demos'
 	},

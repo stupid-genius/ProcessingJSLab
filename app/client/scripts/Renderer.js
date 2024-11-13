@@ -234,6 +234,10 @@ function Renderer(canvas){
 				return 0;
 			}
 		},
+		showFrameRate: {
+			value: function(){
+			}
+		},
 		showRuler: {
 			set: function(){
 			}

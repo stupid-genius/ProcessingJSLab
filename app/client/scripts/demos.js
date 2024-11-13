@@ -1006,47 +1006,76 @@ const demos = {
 		bg.update();
 		renderer.background(bg);
 
+		// const tailPeriod = 10;
+		// const rotationSpeed = 200;
 		// const tailStartX = renderer.width/2;
 		// const tailStartY = renderer.height/2;
-		// const tailEndX = renderer.width/2 + 100;
-		// const tailEndY = renderer.height/2 + 100;
+		// const tailEndX = renderer.width/2 - 100;
+		// const tailEndY = renderer.height/2 - 100;
+		// const deltaX = tailStartX - tailEndX;
+		// const deltaY = tailStartY - tailEndY;
 
 		// renderer.frame = () => {
 		// 	renderer.background(0);
-		// 	const deltaX = tailStartX - tailEndX;
-		// 	const deltaY = tailStartY - tailEndY;
-		// 	const length = Math.hypot(deltaX, deltaY);
-		// 	const CW = length + Math.PI/10 * renderer.frameCount;
-		// 	const perpX = -deltaY / length;
-		// 	const perpY = deltaX / length;
 
-		// 	const ctrl1X = 50 * Math.cos(CW + Math.PI/2) + tailStartX-(0.33*deltaX);
-		// 	const ctrl1Y = 50 * Math.sin(CW + Math.PI/2) + tailStartY-(0.33*deltaY);
-		// 	const ctrl2X = 25 * Math.cos(CW) + tailStartX-(0.66*deltaX);
-		// 	const ctrl2Y = 25 * Math.sin(CW) + tailStartY-(0.66*deltaY);
-		// 	const tail2X = tailEndX + perpX * Math.sin(Math.PI/10 * renderer.frameCount) * 50;
-		// 	const tail2Y = tailEndY + perpY * Math.sin(Math.PI/10 * renderer.frameCount) * 50;
+		// 	const angle = Math.PI/rotationSpeed * renderer.frameCount;
+		// 	const cosAngle = Math.cos(angle);
+		// 	const sinAngle = Math.sin(angle);
+
+		// 	const x33 = (0.33*deltaX * cosAngle - 0.33*deltaY * sinAngle);
+		// 	const y33 = (0.33*deltaX * sinAngle + 0.33*deltaY * cosAngle);
+		// 	const x66 = (0.66*deltaX * cosAngle - 0.66*deltaY * sinAngle);
+		// 	const y66 = (0.66*deltaX * sinAngle + 0.66*deltaY * cosAngle);
+		// 	const tailRotatedX = tailStartX + (deltaX * cosAngle - deltaY * sinAngle);
+		// 	const tailRotatedY = tailStartY + (deltaX * sinAngle + deltaY * cosAngle);
+
+		// 	const CW = Math.PI/tailPeriod * renderer.frameCount;
+		// 	const cosCW = Math.cos(CW);
+		// 	const sinCW = Math.sin(CW);
+		// 	const cosCW2 = -sinCW;
+		// 	const sinCW2 = cosCW;
+
+		// 	const off1X = x33 * cosCW2 - y33 * sinCW2;
+		// 	const off1Y = x33 * sinCW2 + y33 * cosCW2;
+		// 	const off2X = x66 * cosCW - y66 * sinCW;
+		// 	const off2Y = x66 * sinCW + y66 * cosCW;
+
+		// 	const ctrl1X = tailStartX + x33 + 0.5*off1X;
+		// 	const ctrl1Y = tailStartY + y33 + 0.5*off1Y;
+		// 	const ctrl2X = tailStartX + x66 + 0.5*off2X;
+		// 	const ctrl2Y = tailStartY + y66 + 0.5*off2Y;
+
+		// 	const deltaRotX = tailStartX - tailRotatedX;
+		// 	const deltaRotY = tailStartY - tailRotatedY;
+		// 	const length = Math.hypot(deltaRotX, deltaRotY);
+		// 	const perpX = -deltaRotY / length;
+		// 	const perpY = deltaRotX / length;
+		// 	const perpOsc = sinCW * 50;
+		// 	const tail2X = tailRotatedX + perpX * perpOsc;
+		// 	const tail2Y = tailRotatedY + perpY * perpOsc;
 
 		// 	renderer.fill(0,0,0,0);
 		// 	renderer.stroke(255, 0, 0, 255);
-		// 	renderer.line(tailStartX, tailStartY, tailEndX, tailEndY);
+		// 	// renderer.line(tailStartX, tailStartY, tailRotatedX, tailRotatedY);
 
 		// 	renderer.stroke(255, 255, 255, 255);
-		// 	renderer.ellipse(
-		// 		ctrl1X,
-		// 		ctrl1Y,
-		// 		3, 3
-		// 	);
-		// 	renderer.ellipse(
-		// 		ctrl2X,
-		// 		ctrl2Y,
-		// 		3, 3
-		// 	);
-		// 	renderer.ellipse(
-		// 		tail2X,
-		// 		tail2Y,
-		// 		3, 3
-		// 	);
+		// 	// renderer.ellipse(
+		// 	// 	ctrl1X,
+		// 	// 	ctrl1Y,
+		// 	// 	// x33,y33,
+		// 	// 	3, 3
+		// 	// );
+		// 	// renderer.ellipse(
+		// 	// 	ctrl2X,
+		// 	// 	ctrl2Y,
+		// 	// 	// x66, y66,
+		// 	// 	3, 3
+		// 	// );
+		// 	// renderer.ellipse(
+		// 	// 	tail2X,
+		// 	// 	tail2Y,
+		// 	// 	3, 3
+		// 	// );
 
 		// 	renderer.bezier(
 		// 		tailStartX,
@@ -1167,7 +1196,7 @@ const demos = {
 		let swimX, swimY;
 		const radius = 20;
 		const tailLength = 12;
-		const tailFreq = 5;
+		const tailPeriod = 5;
 
 		const NUM_BOIDS = 200;
 		const MAX_SPEED = 3;
@@ -1277,21 +1306,38 @@ const demos = {
 			this.y += this.dy;
 
 			const theta = xMath.direction(this.x, this.y, this.x-this.dx, this.y-this.dy);
-			const tailEndX = this.x + tailLength * Math.cos(theta);
-			const tailEndY = this.y + tailLength * Math.sin(theta);
+			const cosTheta = Math.cos(theta);
+			const sinTheta = Math.sin(theta);
+
+			const length33 = 0.33 * tailLength;
+			const length66 = 0.66 * tailLength;
+			const x33 = length33 * cosTheta;
+			const y33 = length33 * sinTheta;
+			const x66 = length66 * cosTheta;
+			const y66 = length66 * sinTheta;
+			const tailEndX = this.x + tailLength * cosTheta;
+			const tailEndY = this.y + tailLength * sinTheta;
+
+			this.unique ??= xMath.roll(Math.PI/2);
+			const CW = Math.PI/tailPeriod * renderer.frameCount + this.unique;
+			const cosCW = Math.cos(CW);
+			const sinCW = Math.sin(CW);
+			const cosCW2 = -sinCW;
+			const sinCW2 = cosCW;
+
+			const ctrl1X = this.x + x33 + 0.5*(x33 * cosCW2 - y33 * sinCW2);
+			const ctrl1Y = this.y + y33 + 0.5*(x33 * sinCW2 + y33 * cosCW2);
+			const ctrl2X = this.x + x66 + 0.5*(x66 * cosCW - y66 * sinCW);
+			const ctrl2Y = this.y + y66 + 0.5*(x66 * sinCW + y66 * cosCW);
+
 			const deltaX = this.x - tailEndX;
 			const deltaY = this.y - tailEndY;
 			const length = Math.hypot(deltaX, deltaY);
-			const CW = length + Math.PI/tailFreq * renderer.frameCount;
 			const perpX = -deltaY / length;
 			const perpY = deltaX / length;
-
-			const ctrl1X = 3 * Math.cos(CW + Math.PI/2) + this.x-(0.33*deltaX);
-			const ctrl1Y = 3 * Math.sin(CW + Math.PI/2) + this.y-(0.33*deltaY);
-			const ctrl2X = 2 * Math.cos(CW) + this.x-(0.66*deltaX);
-			const ctrl2Y = 2 * Math.sin(CW) + this.y-(0.66*deltaY);
-			const tailX = tailEndX + perpX * Math.sin(Math.PI/tailFreq * renderer.frameCount) * 3;
-			const tailY = tailEndY + perpY * Math.sin(Math.PI/tailFreq * renderer.frameCount) * 3;
+			const perpOsc = sinCW * 3;
+			const tailX = tailEndX + perpX * perpOsc;
+			const tailY = tailEndY + perpY * perpOsc;
 			renderer.bezier(
 				this.x,
 				this.y,
