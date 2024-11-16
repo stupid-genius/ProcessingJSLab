@@ -27,8 +27,8 @@ const registry = Object.freeze({
 	},
 	load: {
 		func: function(name, ...args){
-			this.echo(`Loading ${name}…`);
 			if(name in demos){
+				this.echo(`Loading ${name}…`);
 				renderer.init();
 				demos[name].apply(this, args);
 			}

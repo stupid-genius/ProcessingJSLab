@@ -4,6 +4,14 @@ const Logger = require('log-ng').default;
 // import 'https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js';
 // let Processing;
 
+/*
+ * TODO
+ * - [ ] Implement `showFrameRate`
+ * - [ ] Implement `showRuler`
+ * - [ ] Implement `pixelWidth`
+ * - [ ] Implement `pixelHeight`
+ */
+
 const logger = new Logger('Renderer.js');
 
 function Image(pimage, pjs){
@@ -137,6 +145,15 @@ function Renderer(canvas){
 	if(!new.target){
 		return new Renderer(...arguments);
 	}
+	const proxy = new Proxy(this, {
+		get: function(target, prop){
+			return target[prop] ?? pjs[prop];
+		}
+	});
+
+	Object.defineProperty(Renderer, 'instance', {
+		value: proxy
+	});
 
 	// { Processing, PFont } = await import('https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js');
 	// console.dir(Processing);
@@ -146,7 +163,6 @@ function Renderer(canvas){
 		frameRate: 60,
 		height: canvas.height,
 		width: canvas.width
-		// renderer: pjs.P3D
 	};
 	let pjs;
 
@@ -175,6 +191,10 @@ function Renderer(canvas){
 			value: function(custom){
 				if(pjs !== undefined){
 					pjs.exit();
+					pjs = undefined;
+					const newCanvas = document.createElement('canvas');
+					canvas.replaceWith(newCanvas);
+					canvas = newCanvas;
 				}
 				const config = Object.assign({}, defaultConfig, custom);
 				/* eslint-disable-next-line no-undef */
@@ -203,13 +223,14 @@ function Renderer(canvas){
 						},
 						setup: {
 							value: function(){
-								processingjs.size(config.width, config.height);
+								processingjs.size(config.width, config.height, processingjs[config.renderer]);
 								logger.debug(`processingjs width (${processingjs.width}) height (${processingjs.height}) ${processingjs.use3DContext}`);
 								processingjs.frameRate(config.frameRate);
 								processingjs.noLoop();
 								processingjs.background(config.background);
 								logger.info('Processing.js setup');
-							}
+							},
+							writable: true
 						}
 					});
 				});
@@ -245,21 +266,53 @@ function Renderer(canvas){
 	});
 	this.init();
 
-	const proxy = new Proxy(this, {
-		get: function(target, prop){
-			return target[prop] ?? pjs[prop];
+	return proxy;
+}
+
+// Spatial Hash Grid
+function Space(){
+	if(!new.target){
+		return new Space(...arguments);
+	}
+
+	const grid = new Map();
+	const cellSize = 10;
+
+	Object.defineProperties(this, {
+		add: {
+			value: function(item, x, y){
+				const key = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
+				if(grid.has(key)){
+					grid.get(key).push(item);
+				}else{
+					grid.set(key, [item]);
+				}
+			}
+		},
+		get: {
+			value: function(x, y){
+				const key = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
+				return grid.get(key) ?? [];
+			}
+		},
+		remove: {
+			value: function(item, x, y){
+				const key = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
+				const cell = grid.get(key);
+				if(cell !== undefined){
+					const index = cell.indexOf(item);
+					if(index !== -1){
+						cell.splice(index, 1);
+					}
+				}
+			}
 		}
 	});
-
-	Object.defineProperty(Renderer, 'instance', {
-		value: proxy
-	});
-
-	return proxy;
 }
 
 module.exports = {
 	DoubleBuffer,
 	Image,
-	Renderer
+	Renderer,
+	Space
 };

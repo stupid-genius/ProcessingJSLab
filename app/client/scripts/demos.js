@@ -15,49 +15,44 @@ function checkerBoard(boardWidth, squareWidth, color, index){
 }
 
 const demos = {
-	//'3d': function(){
-	//	// renderer.init({
-	//	// 	background: 0xFF0A110A,
-	//	// 	frameRate: 60,
-	//	// 	renderer: 'P3D'
-	//	// 	// renderer: 2
-	//	// });
-	//	renderer.init('P3D');
-	//	const canvasWidth = renderer.width;
-	//	const canvasHeight = renderer.height;
-	//	let angle = 0;
-	//	const r = 255;
-	//	const g = 255;
-	//	const b = 255;
-	//	// renderer.init();
-	//	renderer.frame = function(){
-	//		renderer.background(0);
-	//		renderer.camera(canvasWidth/2, canvasHeight/5, 200, canvasWidth/2, canvasHeight/2, 0, 0, 1, 0);
-	//		//renderer.ambientLight(50, 50, 50);
-	//		renderer.pointLight(r, g/10, b/10, canvasWidth/3, canvasHeight/3, 100);
-	//		renderer.pointLight(r/10, g, b/10, 300, canvasWidth/3, 100);
-	//		renderer.pointLight(r/10, g/10, b, 300, 300, -100);
-	//		renderer.pointLight(r, g, b, canvasWidth/3, 300, -100);
-	//		renderer.translate(canvasWidth/2, canvasHeight/2);
-	//		//renderer.sphere(60);
-	//		renderer.rotateY(angle);
-	//		renderer.normal(0, 0, 1);
-	//		renderer.fill(128);
-	//		renderer.rect(-100, -100, 200, 200);
-	//		/*pjs.beginShape(pjs.TRIANGLE_FAN);
-	//		pjs.normal(0, 0, 1);
-	//		pjs.fill(50, 50, 200);
-	//		pjs.vertex(-100, 100, 0);
-	//		pjs.vertex(100, 100, 0);
-	//		pjs.fill(200, 50, 50);
-	//		pjs.vertex(100, -100, 0);
-	//		pjs.vertex(-100, -100, 0);
-	//		pjs.endShape();
-	//		*/
-	//		angle += 0.01;
-	//	};
-	//	renderer.loop();
-	//},
+	'3d': function(){
+		renderer.init({
+			renderer: 'P3D',
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		let angle = 0;
+		const r = 255;
+		const g = 255;
+		const b = 255;
+		renderer.frame = function(){
+			renderer.background(0);
+			renderer.camera(canvasWidth/2, canvasHeight/5, 200, canvasWidth/2, canvasHeight/2, 0, 0, 1, 0);
+			//renderer.ambientLight(50, 50, 50);
+			renderer.pointLight(r, g/10, b/10, canvasWidth/3, canvasHeight/3, 100);
+			renderer.pointLight(r/10, g, b/10, 300, canvasWidth/3, 100);
+			renderer.pointLight(r/10, g/10, b, 300, 300, -100);
+			renderer.pointLight(r, g, b, canvasWidth/3, 300, -100);
+			renderer.translate(canvasWidth/2, canvasHeight/2);
+			//renderer.sphere(60);
+			renderer.rotateY(angle);
+			renderer.normal(0, 0, 1);
+			renderer.fill(128);
+			renderer.rect(-100, -100, 200, 200);
+			/*pjs.beginShape(pjs.TRIANGLE_FAN);
+			pjs.normal(0, 0, 1);
+			pjs.fill(50, 50, 200);
+			pjs.vertex(-100, 100, 0);
+			pjs.vertex(100, 100, 0);
+			pjs.fill(200, 50, 50);
+			pjs.vertex(100, -100, 0);
+			pjs.vertex(-100, -100, 0);
+			pjs.endShape();
+			*/
+			angle += 0.01;
+		};
+		renderer.loop();
+	},
 	ants: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -85,8 +80,12 @@ const demos = {
 			}
 
 			// Apply forces to acceleration
-			this.ddx = xMath.range(-1.01, 1);
-			this.ddy = xMath.range(-1.01, 1);
+			this.last ??= xMath.roll(60);
+			if(this.last++ > 60){
+				this.ddx = xMath.range(-0.05, 0.05);
+				this.ddy = xMath.range(-0.05, 0.05);
+				this.last = 0;
+			}
 
 			this.dx += this.ddx;
 			this.dy += this.ddy;
@@ -131,6 +130,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// balls: function(){},
 	boids: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -475,6 +475,8 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// coffer: function(){},
+	// egg: function(){},
 	fire: function(){
 		renderer.init({
 			background: 0,
@@ -739,13 +741,16 @@ const demos = {
 		const centerX = canvasWidth/2;
 		const centerY = canvasHeight/2;
 
-		const NUM_PARTICLES = 100;
-		const MAX_SPEED = 10;
+		const starRadius = 25;
+
+		const NUM_PARTICLES = 20;
+		const MAX_SPEED = 5;
+		const FALLOFF = 1.25;
+		const G = 1.7;
 
 		const ps = new Particles(renderer, function(pjs){
-			// center of mass
-			let comX = 0;
-			let comY = 0;
+			let gravX = 0;
+			let gravY = 0;
 
 			const head = pjs.list;
 			let cur = head;
@@ -757,10 +762,39 @@ const demos = {
 					}
 					continue;
 				}
-				// const distance = Math.hypot(this.x - cur.x, this.y - cur.y);
 
-				comX += cur.x;
-				comY += cur.y;
+				const dist = xMath.distance(this.x, this.y, cur.x, cur.y);
+				const theta = xMath.direction(this.x, this.y, cur.x, cur.y);
+				const force = G * 1 / ((dist/1) ** FALLOFF);
+				const forceX = force * Math.cos(theta);
+				const forceY = force * Math.sin(theta);
+
+				if(dist < 1){
+					const theta = xMath.direction(this.x, this.y, cur.x, cur.y);
+					const dx = Math.cos(theta);
+					const dy = Math.sin(theta);
+
+					const v1 = Math.hypot(this.dx, this.dy);
+					const v2 = Math.hypot(cur.dx, cur.dy);
+
+					this.dx = v2 * dx;
+					this.dy = v2 * dy;
+					cur.dx = v1 * dx;
+					cur.dy = v1 * dy;
+					break;
+				}else if(dist < 3){
+					gravX += -forceX * 2;
+					gravY += -forceY * 2;
+				}else{
+					gravX += forceX;
+					gravY += forceY;
+				}
+
+				// const collapsVel = Math.hypot(gravX, gravY);
+				// if(collapsVel > MAX_SPEED){
+				// 	gravX = 0;
+				// 	gravY = 0;
+				// }
 
 				cur = cur.next;
 				if(cur === head){
@@ -768,14 +802,22 @@ const demos = {
 				}
 			}
 
-			// console.log(ps.count);
-			comX = (comX / ps.count - this.x) * 0.0001;
-			comY = (comY / ps.count - this.y) * 0.0001;
+			this.ddx = gravX;
+			this.ddy = gravY;
 
-			// this.ddx = 0;
-			// this.ddy = 0;
-			this.ddx = comX;
-			this.ddy = comY;
+			const starDir = xMath.direction(this.x, this.y, centerX, centerY);
+			const starDist = xMath.distance(this.x, this.y, centerX, centerY);
+			const starForce = G * 1 / ((starDist/4) ** FALLOFF);
+			const starGravX = starForce * Math.cos(starDir);
+			const starGravY = starForce * Math.sin(starDir);
+
+			if(starDist < starRadius){
+				this.ddx += -starGravY * 2;
+				this.ddy += -starGravX * 2;
+			}else{
+				this.ddx += starGravX;
+				this.ddy += starGravY;
+			}
 
 			this.dx += this.ddx;
 			this.dy += this.ddy;
@@ -786,11 +828,8 @@ const demos = {
 				this.dy = (this.dy / speed) * MAX_SPEED;
 			}
 
-			// const x = this.x - (3 * this.dx);
-			// const y = this.y - (3 * this.dy);
 			this.x += this.dx;
 			this.y += this.dy;
-			// renderer.line(this.x, this.y, x, y);
 
 			if(this.x >= canvasWidth - 1){
 				this.x = canvasWidth - 1;
@@ -806,20 +845,28 @@ const demos = {
 				this.y = 0;
 				this.dy *= -1;
 			}
+			if(this.x === 0 && this.y === 0){
+				this.x = xMath.roll(canvasWidth);
+				this.y = xMath.roll(canvasHeight);
+			}
 		});
+		ps.SHAPE = 'ellipse';
 
 		for(let i=0; i<NUM_PARTICLES; ++i){
-			// const force = xMath.range(0.001, 1) * MAX_SPEED;
-			// const theta = xMath.range(-0.1, 0.1);
+			const force = MAX_SPEED;
+			const theta = 1.25 + xMath.range(-0.088, 0.088);
 			// ttl, x, y, dx, dy, r, g, b, a
-			// ps.createParticle(0, xMath.range(centerX-10.01, centerX+10), xMath.range(centerY-10.01, centerY+10), xMath.range(-5.01, 5), xMath.range(-5.01, 5), ...[255, 255, 196]);
-			ps.createParticle(0, xMath.roll(canvasWidth), xMath.roll(canvasHeight), xMath.range(-5.01, 5), xMath.range(-5.01, 5), ...[255, 255, 196]);
+			ps.createParticle(0, xMath.roll(centerX-100), xMath.roll(centerY), force * Math.cos(theta), force * Math.sin(theta), ...[255, 255, 196]);
 		}
 
 		renderer.stroke(0, 0, 0, 255);
 		renderer.frame = function(){
 			renderer.background(0);
 			ps.render();
+
+			renderer.fill(255, 255, 200);
+			renderer.stroke(255, 255, 0);
+			renderer.ellipse(centerX, centerY, starRadius, starRadius);
 		};
 		renderer.loop();
 	},
@@ -997,6 +1044,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// orbit: function(){},
 	pattern: function(){
 		const bg = renderer.createImage();
 		const height = bg.height;
@@ -1006,89 +1054,105 @@ const demos = {
 		bg.update();
 		renderer.background(bg);
 
-		// const tailPeriod = 10;
-		// const rotationSpeed = 200;
-		// const tailStartX = renderer.width/2;
-		// const tailStartY = renderer.height/2;
-		// const tailEndX = renderer.width/2 - 100;
-		// const tailEndY = renderer.height/2 - 100;
-		// const deltaX = tailStartX - tailEndX;
-		// const deltaY = tailStartY - tailEndY;
+		//const Vector = renderer.PVector.bind(renderer);
+		//const tailPeriod = 10;
+		//const rotationPeriod = 240;
+		//const tailStartX = renderer.width/2;
+		//const tailStartY = renderer.height/2;
+		//const tailLength = Math.hypot(100, 100);
 
-		// renderer.frame = () => {
-		// 	renderer.background(0);
+		//renderer.frame = () => {
+		//	renderer.background(0);
 
-		// 	const angle = Math.PI/rotationSpeed * renderer.frameCount;
-		// 	const cosAngle = Math.cos(angle);
-		// 	const sinAngle = Math.sin(angle);
+		//	const angle = Math.PI/rotationPeriod * renderer.frameCount;
+		//	const cosAngle = Math.cos(angle);
+		//	const sinAngle = Math.sin(angle);
 
-		// 	const x33 = (0.33*deltaX * cosAngle - 0.33*deltaY * sinAngle);
-		// 	const y33 = (0.33*deltaX * sinAngle + 0.33*deltaY * cosAngle);
-		// 	const x66 = (0.66*deltaX * cosAngle - 0.66*deltaY * sinAngle);
-		// 	const y66 = (0.66*deltaX * sinAngle + 0.66*deltaY * cosAngle);
-		// 	const tailRotatedX = tailStartX + (deltaX * cosAngle - deltaY * sinAngle);
-		// 	const tailRotatedY = tailStartY + (deltaX * sinAngle + deltaY * cosAngle);
+		//	const CW = Math.PI/tailPeriod * renderer.frameCount;
+		//	const cosCW = Math.cos(CW);
+		//	const sinCW = Math.sin(CW);
+		//	const cosCW2 = -sinCW;
+		//	const sinCW2 = cosCW;
 
-		// 	const CW = Math.PI/tailPeriod * renderer.frameCount;
-		// 	const cosCW = Math.cos(CW);
-		// 	const sinCW = Math.sin(CW);
-		// 	const cosCW2 = -sinCW;
-		// 	const sinCW2 = cosCW;
+		//	const vTailStart = new Vector(tailStartX, tailStartY);
+		//	const vTailDir = new Vector(cosAngle, sinAngle);
+		//	vTailDir.setMag(tailLength);
+		//	vTailDir.add(vTailStart);
+		//	const v33 = new Vector(cosAngle, sinAngle);
+		//	const v66 = new Vector(cosAngle, sinAngle);
+		//	v33.setMag(tailLength * 0.33);
+		//	v66.setMag(tailLength * 0.66);
 
-		// 	const off1X = x33 * cosCW2 - y33 * sinCW2;
-		// 	const off1Y = x33 * sinCW2 + y33 * cosCW2;
-		// 	const off2X = x66 * cosCW - y66 * sinCW;
-		// 	const off2Y = x66 * sinCW + y66 * cosCW;
+		//	const vCtrl1 = new Vector(cosCW2, sinCW2);
+		//	vCtrl1.setMag(v33.mag()*0.5);
+		//	vCtrl1.add(v33);
+		//	vCtrl1.add(vTailStart);
+		//	const vCtrl2 = new Vector(cosCW, sinCW);
+		//	vCtrl2.setMag(v66.mag()*0.5);
+		//	vCtrl2.add(v66);
+		//	vCtrl2.add(vTailStart);
 
-		// 	const ctrl1X = tailStartX + x33 + 0.5*off1X;
-		// 	const ctrl1Y = tailStartY + y33 + 0.5*off1Y;
-		// 	const ctrl2X = tailStartX + x66 + 0.5*off2X;
-		// 	const ctrl2Y = tailStartY + y66 + 0.5*off2Y;
+		//	const a = new Vector(vTailDir.x, vTailDir.y);
+		//	a.sub(vTailStart);
+		//	const b = new Vector(vCtrl1.x, vCtrl1.y);
+		//	b.sub(vTailStart);
+		//	const height = (a.x * b.y - a.y * b.x) / a.mag() * 1.5;
 
-		// 	const deltaRotX = tailStartX - tailRotatedX;
-		// 	const deltaRotY = tailStartY - tailRotatedY;
-		// 	const length = Math.hypot(deltaRotX, deltaRotY);
-		// 	const perpX = -deltaRotY / length;
-		// 	const perpY = deltaRotX / length;
-		// 	const perpOsc = sinCW * 50;
-		// 	const tail2X = tailRotatedX + perpX * perpOsc;
-		// 	const tail2Y = tailRotatedY + perpY * perpOsc;
+		//	const vPerp = new Vector(vTailStart.x, vTailStart.y);
+		//	vPerp.sub(vTailDir);
+		//	const vTailEnd = new Vector(-vPerp.y, vPerp.x);
+		//	vTailEnd.setMag(height);
+		//	vTailEnd.add(vTailDir);
 
-		// 	renderer.fill(0,0,0,0);
-		// 	renderer.stroke(255, 0, 0, 255);
-		// 	// renderer.line(tailStartX, tailStartY, tailRotatedX, tailRotatedY);
+		//	//---------------------------------------------------
 
-		// 	renderer.stroke(255, 255, 255, 255);
-		// 	// renderer.ellipse(
-		// 	// 	ctrl1X,
-		// 	// 	ctrl1Y,
-		// 	// 	// x33,y33,
-		// 	// 	3, 3
-		// 	// );
-		// 	// renderer.ellipse(
-		// 	// 	ctrl2X,
-		// 	// 	ctrl2Y,
-		// 	// 	// x66, y66,
-		// 	// 	3, 3
-		// 	// );
-		// 	// renderer.ellipse(
-		// 	// 	tail2X,
-		// 	// 	tail2Y,
-		// 	// 	3, 3
-		// 	// );
+		//	renderer.fill(0,0,0,0);
+		//	renderer.stroke(255, 0, 0, 255);
+		//	renderer.line(vTailStart.x, vTailStart.y, vTailDir.x, vTailDir.y);
+		//	renderer.ellipse(
+		//		vTailStart.x+v33.x,
+		//		vTailStart.y+v33.y,
+		//		v33.mag(), v33.mag()
+		//	);
+		//	renderer.ellipse(
+		//		vTailStart.x+v66.x,
+		//		vTailStart.y+v66.y,
+		//		v66.mag(), v66.mag()
+		//	);
 
-		// 	renderer.bezier(
-		// 		tailStartX,
-		// 		tailStartY,
-		// 		ctrl1X,
-		// 		ctrl1Y,
-		// 		ctrl2X,
-		// 		ctrl2Y,
-		// 		tail2X,
-		// 		tail2Y,
-		// 	);
-		// };
-		// renderer.loop();
+		//	renderer.stroke(0, 255, 0, 255);
+		//	renderer.line(vTailStart.x+v33.x, vTailStart.y+v33.y, vCtrl1.x, vCtrl1.y);
+		//	renderer.line(vTailStart.x+v66.x, vTailStart.y+v66.y, vCtrl2.x, vCtrl2.y);
+		//	renderer.line(vTailDir.x, vTailDir.y, vTailEnd.x, vTailEnd.y);
+		//	renderer.ellipse(
+		//		vCtrl1.x,
+		//		vCtrl1.y,
+		//		3, 3
+		//	);
+		//	renderer.ellipse(
+		//		vCtrl2.x,
+		//		vCtrl2.y,
+		//		3, 3
+		//	);
+		//	renderer.ellipse(
+		//		vTailEnd.x,
+		//		vTailEnd.y,
+		//		3, 3
+		//	);
+
+		//	renderer.stroke(255, 255, 255, 255);
+		//	renderer.bezier(
+		//		vTailStart.x,
+		//		vTailStart.y,
+		//		vCtrl1.x,
+		//		vCtrl1.y,
+		//		vCtrl2.x,
+		//		vCtrl2.y,
+		//		vTailEnd.x,
+		//		vTailEnd.y,
+		//	);
+		//};
+		//renderer.loop();
 	},
 	plasma: function(){
 		renderer.init({
@@ -1183,6 +1247,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// rocks: function(){},
 	rod: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1322,11 +1387,12 @@ const demos = {
 			const CW = Math.PI/tailPeriod * renderer.frameCount + this.unique;
 			const cosCW = Math.cos(CW);
 			const sinCW = Math.sin(CW);
-			const cosCW2 = -sinCW;
-			const sinCW2 = cosCW;
+			// phase shift by PI/2
+			// const cosCW2 = -sinCW;
+			// const sinCW2 = cosCW;
 
-			const ctrl1X = this.x + x33 + 0.5*(x33 * cosCW2 - y33 * sinCW2);
-			const ctrl1Y = this.y + y33 + 0.5*(x33 * sinCW2 + y33 * cosCW2);
+			const ctrl1X = this.x + x33 + 0.5*(x33 * -sinCW - y33 * cosCW);
+			const ctrl1Y = this.y + y33 + 0.5*(x33 * cosCW + y33 * -sinCW);
 			const ctrl2X = this.x + x66 + 0.5*(x66 * cosCW - y66 * sinCW);
 			const ctrl2Y = this.y + y66 + 0.5*(x66 * sinCW + y66 * cosCW);
 
@@ -1419,6 +1485,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// sand: function(){},
 	snow: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1439,6 +1506,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// spiro: function(){},
 	stars: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1481,5 +1549,6 @@ const demos = {
 		};
 		renderer.loop();
 	}
+	// war: function(){}
 };
 module.exports = demos;
