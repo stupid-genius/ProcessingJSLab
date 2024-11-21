@@ -13,6 +13,16 @@ function checkerBoard(boardWidth, squareWidth, color, index){
 	}
 	return [squareColor, squareColor, squareColor, 255];
 }
+function compileShader(gl, source, type) {
+	const shader = gl.createShader(type);
+	gl.shaderSource(shader, source);
+	gl.compileShader(shader);
+	if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+		console.error('Shader compilation failed:', gl.getShaderInfoLog(shader));
+		return null;
+	}
+	return shader;
+}
 
 const demos = {
 	'3d': function(){
@@ -59,7 +69,9 @@ const demos = {
 
 		const NUM_ANTS = 200;
 		const MAX_SPEED = 1;
-		// const TURN_RATE = 0.0005;
+
+		const bg = renderer.createImage();
+		bg.update();
 
 		const ps = new Particles(renderer, function(ps){
 			const head = ps.list;
@@ -125,7 +137,7 @@ const demos = {
 
 		renderer.stroke(0, 0, 0, 255);
 		renderer.frame = function(){
-			renderer.background(0);
+			renderer.background(bg);
 			ps.render();
 		};
 		renderer.loop();
@@ -475,7 +487,63 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// coffer: function(){},
+	// coffer: function(){
+	// 	renderer.init({
+	// 		background: 0
+	// 	});
+	// 	const canvasWidth = renderer.width;
+	// 	const canvasHeight = renderer.height;
+	// 	const d = 100;
+	// 	const r = d/2;
+	// 	const r2 = Math.pow(r, 2);
+	// 	const center = r*(d+1);
+	// 	const spacing = 125;
+
+	// 	const cwLookup = [];
+	// 	const ccwLookup = [];
+	// 	let offset;
+
+	// 	for(let row=0; row<canvasHeight; ++row){
+	// 		const color = xMath.randomGrayscale();
+	// 		renderer.stroke(...color);
+	// 		for(let col=0; col<canvasWidth; ++col){
+	// 			renderer.point(col, row);
+	// 		}
+	// 	}
+
+	// 	// generate lookup tables, a la lens
+	// 	for(let i=0; i < r; ++i){
+	// 		const x = i%r;
+	// 		const y = Math.floor(i/r);
+	// 		const x2 = Math.pow(x, 2);
+	// 		const y2 = Math.pow(y, 2);
+	// 		let ix = 0;
+	// 		let iy = 0;
+
+	// 		// if within circle
+	// 		if(x2 + y2 < r2){
+	// 			ix = 0;
+	// 			iy = 0;
+	// 		}
+
+	// 		// generate lookup tables for clockwise and counter-clockwise
+	// 		offset = (iy * canvasWidth) + ix;
+	// 		cwLookup[center] = offset;
+	// 		ccwLookup[center] = offset;
+	// 	}
+	// 	// define circles
+	// 	const circles = [];
+
+	// 	// rotate circles via lookup
+	// 	circles.forEach((circle) => {
+	// 		for(let i=0; i<circle.length; ++i){
+	// 		}
+	// 	});
+
+	// 	renderer.frame = function(){};
+	// 	renderer.draw();
+	// },
+	// double: function(){},
 	// egg: function(){},
 	fire: function(){
 		renderer.init({
@@ -530,13 +598,14 @@ const demos = {
 				newPixels[p] = xMath.addColors(
 					xMath.decodeColor(curPixels[p-1]),
 					xMath.decodeColor(curPixels[p]),
+					xMath.decodeColor(curPixels[p]),
 					xMath.decodeColor(curPixels[p+1]),
 					xMath.decodeColor(curPixels[p+canvasWidth]),
 				).map((e, i) => {
 					if(i===3){
 						return 255;
 					}
-					const avg = e/4.25;
+					const avg = e/5.25;
 					return avg < 10 ? 0 : avg;
 				});
 			}
@@ -735,7 +804,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	graviton: function(){
+	graviton: function(gravity=3.4, numParticles=20){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
 		const centerX = canvasWidth/2;
@@ -743,10 +812,10 @@ const demos = {
 
 		const starRadius = 25;
 
-		const NUM_PARTICLES = 20;
+		const NUM_PARTICLES = +numParticles;
 		const MAX_SPEED = 5;
-		const FALLOFF = 1.25;
-		const G = 1.7;
+		const FALLOFF = 1.5;
+		const G = +gravity;
 
 		const ps = new Particles(renderer, function(pjs){
 			let gravX = 0;
@@ -765,7 +834,7 @@ const demos = {
 
 				const dist = xMath.distance(this.x, this.y, cur.x, cur.y);
 				const theta = xMath.direction(this.x, this.y, cur.x, cur.y);
-				const force = G * 1 / ((dist/1) ** FALLOFF);
+				const force = G / ((dist/1.25) ** FALLOFF);
 				const forceX = force * Math.cos(theta);
 				const forceY = force * Math.sin(theta);
 
@@ -807,7 +876,7 @@ const demos = {
 
 			const starDir = xMath.direction(this.x, this.y, centerX, centerY);
 			const starDist = xMath.distance(this.x, this.y, centerX, centerY);
-			const starForce = G * 1 / ((starDist/4) ** FALLOFF);
+			const starForce = G * 2 / ((starDist/4) ** FALLOFF);
 			const starGravX = starForce * Math.cos(starDir);
 			const starGravY = starForce * Math.sin(starDir);
 
@@ -870,6 +939,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// lattice: function(){},
 	lens: function(lensWidth=150, lensDepth=30){
 		lensWidth = +lensWidth;
 		lensDepth = +lensDepth;
@@ -950,11 +1020,11 @@ const demos = {
 	},
 	life: function(width=300, height=300){
 		/*
-		 *  Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-		 *	Any live cell with two or three live neighbours lives on to the next generation.
-		 *	Any live cell with more than three live neighbours dies, as if by overpopulation.
-		 *	Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-		 */
+		* Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+		* Any live cell with two or three live neighbours lives on to the next generation.
+		* Any live cell with more than three live neighbours dies, as if by overpopulation.
+		* Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+		*/
 		renderer.init({
 			background: 0,
 			frameRate: 12,
@@ -1045,7 +1115,7 @@ const demos = {
 		renderer.loop();
 	},
 	// orbit: function(){},
-	pattern: function(){
+	pattern: function(full){
 		const bg = renderer.createImage();
 		const height = bg.height;
 		for(let i=0; i<bg.length; ++i){
@@ -1054,105 +1124,117 @@ const demos = {
 		bg.update();
 		renderer.background(bg);
 
-		//const Vector = renderer.PVector.bind(renderer);
-		//const tailPeriod = 10;
-		//const rotationPeriod = 240;
-		//const tailStartX = renderer.width/2;
-		//const tailStartY = renderer.height/2;
-		//const tailLength = Math.hypot(100, 100);
+		if(full === undefined){
+			return;
+		}
 
-		//renderer.frame = () => {
-		//	renderer.background(0);
+		const Vector = renderer.PVector.bind(renderer);
+		const tailPeriod = 20;
+		const rotationPeriod = 360;
+		const tailStartX = renderer.width/2;
+		const tailStartY = renderer.height/2;
+		const tailLength = Math.hypot(100, 100);
 
-		//	const angle = Math.PI/rotationPeriod * renderer.frameCount;
-		//	const cosAngle = Math.cos(angle);
-		//	const sinAngle = Math.sin(angle);
+		renderer.frame = () => {
+			renderer.background(0);
 
-		//	const CW = Math.PI/tailPeriod * renderer.frameCount;
-		//	const cosCW = Math.cos(CW);
-		//	const sinCW = Math.sin(CW);
-		//	const cosCW2 = -sinCW;
-		//	const sinCW2 = cosCW;
+			const angle = Math.PI/rotationPeriod * renderer.frameCount;
+			const cosAngle = Math.cos(angle);
+			const sinAngle = Math.sin(angle);
 
-		//	const vTailStart = new Vector(tailStartX, tailStartY);
-		//	const vTailDir = new Vector(cosAngle, sinAngle);
-		//	vTailDir.setMag(tailLength);
-		//	vTailDir.add(vTailStart);
-		//	const v33 = new Vector(cosAngle, sinAngle);
-		//	const v66 = new Vector(cosAngle, sinAngle);
-		//	v33.setMag(tailLength * 0.33);
-		//	v66.setMag(tailLength * 0.66);
+			const CW = Math.PI/tailPeriod * renderer.frameCount;
+			const cosCW = Math.cos(CW);
+			const sinCW = Math.sin(CW);
+			const cosCW2 = -sinCW;
+			const sinCW2 = cosCW;
 
-		//	const vCtrl1 = new Vector(cosCW2, sinCW2);
-		//	vCtrl1.setMag(v33.mag()*0.5);
-		//	vCtrl1.add(v33);
-		//	vCtrl1.add(vTailStart);
-		//	const vCtrl2 = new Vector(cosCW, sinCW);
-		//	vCtrl2.setMag(v66.mag()*0.5);
-		//	vCtrl2.add(v66);
-		//	vCtrl2.add(vTailStart);
+			const vTailStart = new Vector(tailStartX, tailStartY);
+			const vTailDir = new Vector(cosAngle, sinAngle);
+			vTailDir.setMag(tailLength);
+			vTailDir.add(vTailStart);
+			const v33 = new Vector(cosAngle, sinAngle);
+			const v66 = new Vector(cosAngle, sinAngle);
+			v33.setMag(tailLength * 0.33);
+			v66.setMag(tailLength * 0.66);
 
-		//	const a = new Vector(vTailDir.x, vTailDir.y);
-		//	a.sub(vTailStart);
-		//	const b = new Vector(vCtrl1.x, vCtrl1.y);
-		//	b.sub(vTailStart);
-		//	const height = (a.x * b.y - a.y * b.x) / a.mag() * 1.5;
+			const vCtrl1 = new Vector(cosCW2, sinCW2);
+			vCtrl1.setMag(v33.mag()*0.5);
+			vCtrl1.add(v33);
+			vCtrl1.add(vTailStart);
+			const vCtrl2 = new Vector(cosCW, sinCW);
+			vCtrl2.setMag(v66.mag()*0.5);
+			vCtrl2.add(v66);
+			vCtrl2.add(vTailStart);
 
-		//	const vPerp = new Vector(vTailStart.x, vTailStart.y);
-		//	vPerp.sub(vTailDir);
-		//	const vTailEnd = new Vector(-vPerp.y, vPerp.x);
-		//	vTailEnd.setMag(height);
-		//	vTailEnd.add(vTailDir);
+			const a = new Vector(vTailDir.x, vTailDir.y);
+			a.sub(vTailStart);
+			const b = new Vector(vCtrl1.x, vCtrl1.y);
+			b.sub(vTailStart);
+			const height = (a.x * b.y - a.y * b.x) / a.mag() * 1.5;
 
-		//	//---------------------------------------------------
+			const vPerp = new Vector(vTailStart.x, vTailStart.y);
+			vPerp.sub(vTailDir);
+			const vTailEnd = new Vector(-vPerp.y, vPerp.x);
+			vTailEnd.setMag(height);
+			vTailEnd.add(vTailDir);
 
-		//	renderer.fill(0,0,0,0);
-		//	renderer.stroke(255, 0, 0, 255);
-		//	renderer.line(vTailStart.x, vTailStart.y, vTailDir.x, vTailDir.y);
-		//	renderer.ellipse(
-		//		vTailStart.x+v33.x,
-		//		vTailStart.y+v33.y,
-		//		v33.mag(), v33.mag()
-		//	);
-		//	renderer.ellipse(
-		//		vTailStart.x+v66.x,
-		//		vTailStart.y+v66.y,
-		//		v66.mag(), v66.mag()
-		//	);
+			//---------------------------------------------------
 
-		//	renderer.stroke(0, 255, 0, 255);
-		//	renderer.line(vTailStart.x+v33.x, vTailStart.y+v33.y, vCtrl1.x, vCtrl1.y);
-		//	renderer.line(vTailStart.x+v66.x, vTailStart.y+v66.y, vCtrl2.x, vCtrl2.y);
-		//	renderer.line(vTailDir.x, vTailDir.y, vTailEnd.x, vTailEnd.y);
-		//	renderer.ellipse(
-		//		vCtrl1.x,
-		//		vCtrl1.y,
-		//		3, 3
-		//	);
-		//	renderer.ellipse(
-		//		vCtrl2.x,
-		//		vCtrl2.y,
-		//		3, 3
-		//	);
-		//	renderer.ellipse(
-		//		vTailEnd.x,
-		//		vTailEnd.y,
-		//		3, 3
-		//	);
+			renderer.fill(0,0,0,0);
+			switch(full){
+			case 'circles':
+			case 'full':
+				renderer.stroke(255, 0, 0, 255);
+				renderer.line(vTailStart.x, vTailStart.y, vTailDir.x, vTailDir.y);
+				renderer.ellipse(
+					vTailStart.x+v33.x,
+					vTailStart.y+v33.y,
+					v33.mag(), v33.mag()
+				);
+				renderer.ellipse(
+					vTailStart.x+v66.x,
+					vTailStart.y+v66.y,
+					v66.mag(), v66.mag()
+				);
 
-		//	renderer.stroke(255, 255, 255, 255);
-		//	renderer.bezier(
-		//		vTailStart.x,
-		//		vTailStart.y,
-		//		vCtrl1.x,
-		//		vCtrl1.y,
-		//		vCtrl2.x,
-		//		vCtrl2.y,
-		//		vTailEnd.x,
-		//		vTailEnd.y,
-		//	);
-		//};
-		//renderer.loop();
+				renderer.stroke(0, 255, 0, 255);
+				renderer.line(vTailStart.x+v33.x, vTailStart.y+v33.y, vCtrl1.x, vCtrl1.y);
+				renderer.line(vTailStart.x+v66.x, vTailStart.y+v66.y, vCtrl2.x, vCtrl2.y);
+				renderer.line(vTailDir.x, vTailDir.y, vTailEnd.x, vTailEnd.y);
+				renderer.ellipse(
+					vCtrl1.x,
+					vCtrl1.y,
+					3, 3
+				);
+				renderer.ellipse(
+					vCtrl2.x,
+					vCtrl2.y,
+					3, 3
+				);
+				renderer.ellipse(
+					vTailEnd.x,
+					vTailEnd.y,
+					3, 3
+				);
+				if(full === 'circles'){
+					break;
+				}
+				/* falls through */
+			case 'tail':
+				renderer.stroke(255, 255, 255, 255);
+				renderer.bezier(
+					vTailStart.x,
+					vTailStart.y,
+					vCtrl1.x,
+					vCtrl1.y,
+					vCtrl2.x,
+					vCtrl2.y,
+					vTailEnd.x,
+					vTailEnd.y,
+				);
+			}
+		};
+		renderer.loop();
 	},
 	plasma: function(){
 		renderer.init({
@@ -1199,9 +1281,9 @@ const demos = {
 		// console.dir(sin);
 
 		let pos1 = 0;
-		let pos2 = 0;
+		const pos2 = 0;
 		let pos3 = 0;
-		let pos4 = 0;
+		const pos4 = 0;
 		let tpos1 = 0;
 		let tpos2 = 0;
 		let tpos3 = 0;
@@ -1486,6 +1568,104 @@ const demos = {
 		renderer.loop();
 	},
 	// sand: function(){},
+	// shader: function(){
+	// 	renderer.init({
+	// 		width: 600,
+	// 		height: 600,
+	// 		renderer: 'P3D'
+	// 		// renderer: 'WEBGL'
+	// 	});
+	// 	const canvasWidth = renderer.width;
+	// 	const canvasHeight = renderer.height;
+
+	// 	const vertShaderSrc = `
+	// 		attribute vec3 aPosition;
+	// 		void main(){
+	// 			gl_PointSize = 10.0;
+	// 			gl_Position = vec4(aPosition, 1.0);
+	// 		}
+	// 	`;
+	// 	const fragShaderSrc = `
+	// 		precision mediump float;
+	// 		void main(){
+	// 			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green
+	// 		}
+	// 	`;
+
+	// 	const gl = renderer.externals.context;
+	// 	gl.viewport(0, 0, canvasWidth, canvasHeight);
+
+	// 	console.log('Canvas width:', gl.canvas.width, 'Height:', gl.canvas.height);
+	// 	console.log('Viewport dimensions:', gl.getParameter(gl.VIEWPORT));
+	// 	console.log('Max viewport dims:', gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+	// 	console.log('Supported extensions:', gl.getSupportedExtensions());
+	// 	console.log('Max vertex attribs:', gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+	// 	console.log('Max texture size:', gl.getParameter(gl.MAX_TEXTURE_SIZE));
+
+	// 	const vertShader = compileShader(gl, vertShaderSrc, gl.VERTEX_SHADER);
+	// 	const fragShader = compileShader(gl, fragShaderSrc, gl.FRAGMENT_SHADER);
+
+	// 	// Link shaders into a program
+	// 	const shaderProgram = gl.createProgram();
+	// 	gl.attachShader(shaderProgram, vertShader);
+	// 	gl.attachShader(shaderProgram, fragShader);
+	// 	gl.linkProgram(shaderProgram);
+
+	// 	if(!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
+	// 		console.error('Could not link shaders:', gl.getProgramInfoLog(shaderProgram));
+	// 	}
+
+	// 	gl.useProgram(shaderProgram);
+
+	// 	// const vertices = new Float32Array([
+	// 	// 	0.0,  0.8, 0.0,  // Top
+	// 	// 	-0.8, -0.8, 0.0,  // Bottom left
+	// 	// 	0.8, -0.8, 0.0   // Bottom right
+	// 	// ]);
+	// 	const vertices = new Float32Array([
+	// 		0.0, 0.0, 0.0  // Center point
+	// 	]);
+
+	// 	const vertexBuffer = gl.createBuffer();
+	// 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	// 	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+	// 	const bufferData = gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE);
+	// 	console.log('Buffer size (bytes):', bufferData);
+
+	// 	const aPosition = gl.getAttribLocation(shaderProgram, 'aPosition');
+	// 	gl.enableVertexAttribArray(aPosition);
+	// 	gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+
+	// 	if(aPosition === -1){
+	// 		console.error('Attribute aPosition not found in shader');
+	// 		return;
+	// 	}
+	// 	console.log('aPosition location: ', gl.getAttribLocation(shaderProgram, 'aPosition'));
+
+	// 	gl.disable(gl.CULL_FACE);
+	// 	gl.disable(gl.DEPTH_TEST);
+
+	// 	const error = gl.getError();
+	// 	if(error !== gl.NO_ERROR){
+	// 		console.error('WebGL error during setup:', error);
+	// 	}
+
+	// 	renderer.frame = function(){
+	// 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	// 		gl.clear(gl.COLOR_BUFFER_BIT);
+
+	// 		gl.drawArrays(gl.POINTS, 0, 1);
+	// 		// gl.drawArrays(gl.TRIANGLES, 0, 3);
+	// 		gl.flush();
+
+	// 		const error = gl.getError();
+	// 		if(error !== gl.NO_ERROR){
+	// 			console.error('WebGL error during draw:', error);
+	// 		}
+	// 	};
+	// 	renderer.loop();
+	// },
 	snow: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1506,7 +1686,99 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// spiro: function(){},
+	spiro: function(outer=true, inner=false, trace=true){
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const Vector = renderer.PVector.bind(renderer);
+		const vCenter = new Vector(canvasWidth/2, canvasHeight/2);
+		const vPrevInner = new Vector(0, 0);
+		const vPrevOuter = new Vector(0, 0);
+
+		const rotationPeriod = trace==='false' ? 360 : 36;
+		const outerRadius = canvasWidth/2;
+		const innerRadius = 100;
+		const randRadius = xMath.roll(innerRadius);
+		const randRadius2 = xMath.roll(outerRadius);
+		const randPoint = Math.random();
+		const randPoint2 = Math.random();
+
+		const rollingRatio = (innerRadius+randRadius)/randRadius;
+		const rollingRatio2 = (outerRadius-randRadius2)/randRadius2;
+
+		renderer.frame = function(){
+			const angle = Math.PI/rotationPeriod * renderer.frameCount;
+			const cosAngle = Math.cos(angle);
+			const sinAngle = Math.sin(angle);
+			const innerAngle = Math.PI/rotationPeriod * renderer.frameCount * rollingRatio;
+			const outerAngle = -Math.PI/rotationPeriod * renderer.frameCount * rollingRatio2;
+
+			const vOuter = new Vector(cosAngle, sinAngle);
+			vOuter.setMag(outerRadius - randRadius2);
+			vOuter.add(vCenter);
+
+			const vInner = new Vector(cosAngle, sinAngle);
+			vInner.setMag(innerRadius + randRadius);
+			vInner.add(vCenter);
+
+			const vInnerWheel = new Vector(Math.cos(innerAngle), Math.sin(innerAngle));
+			vInnerWheel.setMag(randRadius*randPoint);
+			vInnerWheel.add(vInner);
+
+			const vOuterWheel = new Vector(Math.cos(outerAngle), Math.sin(outerAngle));
+			vOuterWheel.setMag(randRadius2*randPoint2);
+			vOuterWheel.add(vOuter);
+
+			if(trace === 'false'){
+				renderer.background(0);
+
+				renderer.fill(0, 0, 0, 0);
+				renderer.stroke(0, 255, 0, 255);
+				renderer.ellipse(vCenter.x, vCenter.y, outerRadius*2, outerRadius*2);
+				renderer.ellipse(vCenter.x, vCenter.y, innerRadius*2, innerRadius*2);
+
+				if(outer && outer !== 'false'){
+					renderer.stroke(255, 255, 255, 255);
+					renderer.line(vCenter.x, vCenter.y, vOuter.x, vOuter.y);
+					renderer.line(vOuter.x, vOuter.y, vOuterWheel.x, vOuterWheel.y);
+
+					renderer.stroke(255, 0, 0, 255);
+					renderer.ellipse(vOuter.x, vOuter.y, randRadius2*2, randRadius2*2);
+					renderer.ellipse(vOuterWheel.x, vOuterWheel.y, 2, 2);
+				}
+
+				if(inner && inner !== 'false'){
+					renderer.stroke(255, 255, 255, 255);
+					renderer.line(vCenter.x, vCenter.y, vInner.x, vInner.y);
+					renderer.line(vInner.x, vInner.y, vInnerWheel.x, vInnerWheel.y);
+
+					renderer.stroke(255, 0, 0, 255);
+					renderer.ellipse(vInner.x, vInner.y, randRadius*2, randRadius*2);
+					renderer.ellipse(vInnerWheel.x, vInnerWheel.y, 2, 2);
+				}
+			}else{
+				renderer.stroke(255, 255, 255, 255);
+				// eslint-disable-next-line no-extra-boolean-cast
+				if(outer && outer !== 'false'){
+					if(vPrevOuter.mag() === 0){
+						vPrevOuter.set(vOuterWheel);
+					}
+					renderer.line(vPrevOuter.x, vPrevOuter.y, vOuterWheel.x, vOuterWheel.y);
+					vPrevOuter.set(vOuterWheel);
+				}
+
+				renderer.stroke(128, 255, 128, 255);
+				// eslint-disable-next-line no-extra-boolean-cast
+				if(inner && inner !== 'false'){
+					if(vPrevInner.mag() === 0){
+						vPrevInner.set(vInnerWheel);
+					}
+					renderer.line(vPrevInner.x, vPrevInner.y, vInnerWheel.x, vInnerWheel.y);
+					vPrevInner.set(vInnerWheel);
+				}
+			}
+		};
+		renderer.loop();
+	},
 	stars: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1548,7 +1820,9 @@ const demos = {
 			ps.render();
 		};
 		renderer.loop();
-	}
-	// war: function(){}
+	},
+	// spacewar: function(){},
+	// wormhole: function(){},
+	// zaxxon: function(){}
 };
 module.exports = demos;

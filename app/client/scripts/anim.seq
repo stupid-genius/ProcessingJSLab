@@ -1,0 +1,7 @@
+t,	1000,	type,	'Genius Software'
+re,	1000,	type,	'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b'
+r,	1,		type,	'Stupid'
+re,	1000,	anim,	'power'
+r,	1,		anim,	'wmd'
+re,	1000,	nav,	'https://apps.stupid-genius.com'
+

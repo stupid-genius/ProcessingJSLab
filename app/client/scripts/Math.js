@@ -78,6 +78,12 @@ const xMath = Object.freeze({
 		color.push(alpha ? xMath.roll(255) : 255);
 		return color;
 	},
+	randomGrayscale: (alpha=false) => {
+		const component = xMath.roll(255);
+		const color = Array.from({length: 3}, () => component);
+		color.push(alpha ? xMath.roll(255) : 255);
+		return color;
+	},
 	range: (min, max) => {
 		let real = Math.random() * (max - min);
 		if(Number.isInteger(min) && Number.isInteger(max)){

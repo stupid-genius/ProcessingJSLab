@@ -25,6 +25,11 @@ const registry = Object.freeze({
 		man: 'Print help text for [command].  If no command is passed, list available commands.',
 		usage: 'help [command]'
 	},
+	init: {
+		func: function(){
+			renderer.init();
+		}
+	},
 	load: {
 		func: function(name, ...args){
 			if(name in demos){
