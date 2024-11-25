@@ -3,7 +3,7 @@ const { Executor } = require('./Executor');
 require('./Terminal');
 const { Renderer } = require('./Renderer');
 
-Logger.setLogLevel('debug');
+Logger.setLogLevel('trace');
 const logger = new Logger('index.js');
 
 window.addEventListener('load', () => {

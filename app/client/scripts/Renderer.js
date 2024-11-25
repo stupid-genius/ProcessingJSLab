@@ -24,11 +24,11 @@ function Image(pimage, pjs){
 	// if this ends up being too slow, just expose pixels, directly
 	const proxy = new Proxy(pimage, {
 		get: function(target, prop, receiver){
-			// logger.silly(`getting ${JSON.stringify(prop)}`);
+			// logger.trace(`getting ${JSON.stringify(prop)}`);
 			if(typeof prop === 'string' && !isNaN(prop)){
 				const index = +prop;
 				if(Number.isInteger(index) && index >= 0 && index < length){
-					// logger.silly(`get index ${index}, value ${pixels[index]}`);
+					// logger.trace(`get index ${index}, value ${pixels[index]}`);
 					return pixels[index];
 				}
 			}else{
@@ -37,12 +37,14 @@ function Image(pimage, pjs){
 			}
 		},
 		set: function(target, prop, value, receiver){
-			// logger.silly(`setting ${JSON.stringify(prop)}`);
+			// logger.trace(`setting ${JSON.stringify(prop)}`);
 			if(typeof prop === 'string' && !isNaN(prop)){
-				const index = +prop;
+				const index = Math.round(+prop);
 				if(Number.isInteger(index) && index >= 0 && index < length){
-					// logger.silly(`set index ${index}, value ${value}`);
-					pixels[index] = Array.isArray(value) ? pjs.color.apply(this, value) : value;
+					// logger.trace(`set index ${index}, value ${value}`);
+					pixels[index] = Array.isArray(value) ? pjs.color(...value) : value;
+				}else{
+					logger.noop(`index ${index} out of range, ${length}`);
 				}
 			}else{
 				// logger.debug(`setting ${prop}`);
@@ -117,8 +119,7 @@ function DoubleBuffer(renderer){
 			value: function(){
 				// logger.debug('flip buffers');
 				// console.assert(buffers.write !== buffers.read, 'Read/Write buffers should not be the same object');
-				const writeBuf = buffers.write;
-				const buffer = writeBuf.buffer;
+				const buffer = buffers.write.buffer;
 				buffer.update();
 				renderer.background(buffer);
 				buffers.flip();
@@ -162,9 +163,21 @@ function Renderer(canvas){
 		background: 0xFF0A110A,
 		frameRate: 60,
 		height: canvas.height,
+		showFrameRate: false,
+		showRuler: false,
 		width: canvas.width
 	};
 	let pjs;
+	let showFrameRate = false;
+	let showRuler = false;
+	const rulerInc = 50;
+
+	// text output location
+	// const xOut = 0;
+	// const yOut = 0;
+	// const sizeOut = 12;
+	const maxOut = 5;
+	const out = [];
 
 	Object.defineProperties(this, {
 		createImage: {
@@ -175,16 +188,54 @@ function Renderer(canvas){
 		},
 		frame: {
 			set: function(fn){
-				logger.debug('pjs.draw set');
+				const xCenter = pjs.width/2;
+				const yCenter = pjs.height/2;
+
+				const newFn = new Proxy(fn, {
+					apply: function(target, thisArg, args){
+						target.apply(thisArg, args);
+						if(showFrameRate){
+							pjs.fill(255);
+							pjs.textSize(12);
+							pjs.text(pjs.__frameRate, pjs.width-50, pjs.height-10);
+						}
+						if(showRuler){
+							pjs.stroke(255);
+							pjs.line(0, yCenter, pjs.width, yCenter);
+							pjs.line(xCenter, 0, xCenter, pjs.height);
+							for(let i=rulerInc; i<pjs.width; i+=rulerInc){
+								pjs.point(xCenter+i, yCenter-1);
+								pjs.point(xCenter-i, yCenter-1);
+								pjs.point(xCenter+i, yCenter+1);
+								pjs.point(xCenter-i, yCenter+1);
+							}
+							for(let i=rulerInc; i<pjs.height; i+=rulerInc){
+								pjs.point(xCenter-1, yCenter+i);
+								pjs.point(xCenter-1, yCenter-i);
+								pjs.point(xCenter+1, yCenter+i);
+								pjs.point(xCenter+1, yCenter-i);
+							}
+						}
+					}
+				});
 				Object.defineProperty(pjs, 'draw', {
-					value: fn,
+					value: newFn,
 					writable: true
 				});
+				logger.debug('pjs.draw set');
 			}
 		},
 		doubleBuffer: {
 			value: function(){
 				return new DoubleBuffer(this);
+			}
+		},
+		echo: {
+			value: function(text){
+				out.push(text);
+				if(out.length > maxOut){
+					out.shift();
+				}
 			}
 		},
 		init: {
@@ -228,6 +279,9 @@ function Renderer(canvas){
 								processingjs.frameRate(config.frameRate);
 								processingjs.noLoop();
 								processingjs.background(config.background);
+
+								showFrameRate = config.showFrameRate;
+								showRuler = config.showRuler;
 								logger.info('Processing.js setup');
 							},
 							writable: true
@@ -255,14 +309,6 @@ function Renderer(canvas){
 				return 0;
 			}
 		},
-		showFrameRate: {
-			value: function(){
-			}
-		},
-		showRuler: {
-			set: function(){
-			}
-		}
 	});
 	this.init();
 

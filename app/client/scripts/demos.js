@@ -1,6 +1,7 @@
 const xMath = require('./Math');
 const Particles = require('./Particles');
 const renderer = require('./Renderer').Renderer();
+const { Space } = require('./Space');
 
 function checkerBoard(boardWidth, squareWidth, color, index){
 	const x = index%boardWidth;
@@ -142,7 +143,85 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// balls: function(){},
+	balls: function(){
+		renderer.init({
+			showFrameRate: true,
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const numBalls = 1000;
+		const ballWidth = 10;
+		const maxSpeed = 2;
+
+		const grid = new Space(ballWidth*2);
+
+		const ps = new Particles(renderer, function(){
+			this.x += this.dx;
+			this.y += this.dy;
+			if(this.x < 0){
+				this.x = 0;
+				this.dx *= -1;
+			}
+			if(this.x > canvasWidth){
+				this.x = canvasWidth;
+				this.dx *= -1;
+			}
+			if(this.y < 0){
+				this.y = 0;
+				this.dy *= -1;
+			}
+			if(this.y > canvasHeight){
+				this.y = canvasHeight;
+				this.dy *= -1;
+			}
+
+			const cell = grid.get(this.x, this.y);
+			for(let i=0; i<cell.length; ++i){
+				const other = cell[i];
+				if(other === this){
+					continue;
+				}
+				const distance = Math.hypot(this.x - other.x, this.y - other.y);
+				if(distance < ballWidth){
+					const theta = Math.atan2(this.y - other.y, this.x - other.x);
+					const force = (ballWidth - distance) / ballWidth;
+					this.dx += Math.cos(theta) * force;
+					this.dy += Math.sin(theta) * force;
+					other.dx -= Math.cos(theta) * force;
+					other.dy -= Math.sin(theta) * force;
+
+					// move both balls apart
+					this.x += this.dx;
+					this.y += this.dy;
+					other.x += other.dx;
+					other.y += other.dy;
+				}
+			}
+			grid.add(this.x, this.y, this);
+
+			const speed = Math.hypot(this.dx, this.dy);
+			if(speed > maxSpeed){
+				this.dx = (this.dx / speed) * maxSpeed;
+				this.dy = (this.dy / speed) * maxSpeed;
+			}
+		}, function(pjs){
+			pjs.fill(this.r, this.g, this.b, this.a);
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.ellipse(this.x, this.y, ballWidth, ballWidth);
+		});
+
+		for(let i=0; i<numBalls; ++i){
+			// ttl, x, y, dx, dy, r, g, b, a
+			const p = ps.createParticle(0, xMath.range(0.01, canvasWidth), xMath.range(0.01, canvasHeight), xMath.range(-1, 1.01), xMath.range(-1, 1.01), ...xMath.randomColor());
+			grid.add(p.x, p.y, p);
+		}
+
+		renderer.frame = function(){
+			renderer.background(0);
+			ps.render();
+		};
+		renderer.loop();
+	},
 	boids: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -326,7 +405,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	cell: function(rule=30, random=false, width=200, height=200){
+	cell: function(rule=30, input=false, width=200, height=200){
 		renderer.init({
 			background: 0,
 			frameRate: 400,
@@ -364,14 +443,26 @@ const demos = {
 		})(+rule);
 
 		renderer.stroke(255);
-		if(random && random !== 'false'){
-			for(let col=0; col<canvasWidth; ++col){
-				cells[col] = Math.random() > 0.50 ? ALIVE : DEAD;
-				renderer.point(col, 0);
-			}
-		}else{
+		if(input === false || input === 'false'){
 			cells[canvasWidth/2] = ALIVE;
 			renderer.point(canvasWidth/2, 0);
+		}else if(input === 'random'){
+			for(let col=0; col<canvasWidth; ++col){
+				if(Math.random() > 0.50){
+					cells[col] = ALIVE;
+					renderer.point(col, 0);
+				}
+			}
+		}else{
+			// input is a string of 1s and 0s; center on canvas
+			const inputWidth = input.length;
+			const start = Math.floor((canvasWidth - inputWidth) / 2);
+			for(let i=0; i<inputWidth; ++i){
+				if(+input[i]){
+					cells[start + i] = ALIVE;
+					renderer.point(start + i, 0);
+				}
+			}
 		}
 
 		let row = 0;
@@ -511,7 +602,6 @@ const demos = {
 	// 		}
 	// 	}
 
-	// 	// generate lookup tables, a la lens
 	// 	for(let i=0; i < r; ++i){
 	// 		const x = i%r;
 	// 		const y = Math.floor(i/r);
@@ -531,8 +621,16 @@ const demos = {
 	// 		cwLookup[center] = offset;
 	// 		ccwLookup[center] = offset;
 	// 	}
+
 	// 	// define circles
 	// 	const circles = [];
+	// 	for(let i=spacing*canvasWidth+spacing; i<canvasWidth*canvasHeight; i+=spacing){
+	// 		const circle = [];
+	// 		for(let j=0; j<canvasWidth; ++j){
+	// 			circle.push(j);
+	// 		}
+	// 		circles.push(circle);
+	// 	}
 
 	// 	// rotate circles via lookup
 	// 	circles.forEach((circle) => {
@@ -543,20 +641,26 @@ const demos = {
 	// 	renderer.frame = function(){};
 	// 	renderer.draw();
 	// },
-	// double: function(){},
 	// egg: function(){},
 	fire: function(){
 		renderer.init({
 			background: 0,
 			frameRate: 60,
 			height: 300,
+			showFrameRate: false,
 			width: 300
 		});
 		const canvasWidth = renderer.width;
 		const buffers = renderer.doubleBuffer();
+		const gamma = renderer.createImage();
+		const baseColor = renderer.color(255, 128, 96);
+		const highlightColor = 0xFFFF992E;
+		//0xFFB25B20;
 
-		// this doesn't work because the pixel array is external to the buffer
-		// buffers.writeBuffer.pixels.toArray().fill(renderer.color(0, 0, 0, 255));
+		for(let i=0; i<gamma.length; ++i){
+			gamma[i] = 0x18FA992E;
+		}
+		gamma.update();
 
 		let buffer = buffers.writeBuffer;
 		for(let i=0; i<buffer.length; ++i){
@@ -571,10 +675,39 @@ const demos = {
 		buffers.flip();
 
 		const numRows = buffers.readBuffer.length/canvasWidth;
-		const baseColor = renderer.color(255, 128, 96);
+
+		const ps = new Particles(renderer, function(){
+			this.x += this.dx;
+			this.y += this.dy;
+			this.dy -= 0.05;
+
+			if(this.x < 1){
+				this.x = 1;
+				this.dx *= -0.5;
+			}
+			if(this.x >= canvasWidth-2){
+				this.x = canvasWidth-2;
+				this.dx *= -0.5;
+			}
+			if((this.y|0) < 4){
+				// console.log(this.t);
+				this.active = false;
+			}
+		}, function(pjs){
+			buffers.writeBuffer[(this.y|0)*canvasWidth + this.x] = pjs.color(this.r, this.g, this.b, this.a * (1-(this.t/this.ttl)));
+		});
+
 		renderer.frame = function(){
 			const curPixels = buffers.readBuffer;
 			const newPixels = buffers.writeBuffer;
+
+			// last row, create some particles
+			for(let x=0; x<canvasWidth; ++x){
+				if(Math.random() > 0.97){
+					// ttl, x, y, dx, dy, r, g, b, a
+					ps.createParticle(xMath.range(12, 24)*4, x, numRows-1, xMath.range(-0.95, 0.95), -xMath.range(0.01, 0.0625), highlightColor);
+				}
+			}
 
 			// skip first, last row
 			for(let p=canvasWidth; p < newPixels.length-canvasWidth; ++p){
@@ -584,11 +717,12 @@ const demos = {
 				}
 
 				// seed a few pixels
-				// maybe do some particle stuff
 				const row = p/canvasWidth;
-				if(Math.random() < Math.pow(Math.E, Math.pow(row/numRows, 4)) - 1){
-					if(Math.random() > 0.975){
-						newPixels[p] = baseColor;
+				if(Math.random() < Math.pow(Math.E, Math.pow(row/numRows, 10)) - 1){
+					if(Math.random() > 0.995){
+						newPixels[p-1] = baseColor;
+						newPixels[p+1] = baseColor;
+						ps.createParticle(xMath.range(12, 24)*2, p%canvasWidth, p/canvasWidth, xMath.range(-0.3, 0.3), -xMath.range(0.01, 0.0625), baseColor);
 						continue;
 					}
 				}
@@ -605,11 +739,13 @@ const demos = {
 					if(i===3){
 						return 255;
 					}
-					const avg = e/5.25;
+					const avg = e/5.3;
 					return avg < 10 ? 0 : avg;
 				});
 			}
+			ps.render();
 			buffers.flip();
+			// gamma.blit(0, 0);
 		};
 		renderer.loop();
 	},
@@ -813,8 +949,8 @@ const demos = {
 		const starRadius = 25;
 
 		const NUM_PARTICLES = +numParticles;
-		const MAX_SPEED = 5;
-		const FALLOFF = 1.5;
+		const MAX_SPEED = 6;
+		const FALLOFF = 2;
 		const G = +gravity;
 
 		const ps = new Particles(renderer, function(pjs){
@@ -834,7 +970,7 @@ const demos = {
 
 				const dist = xMath.distance(this.x, this.y, cur.x, cur.y);
 				const theta = xMath.direction(this.x, this.y, cur.x, cur.y);
-				const force = G / ((dist/1.25) ** FALLOFF);
+				const force = G * 3 / ((dist/3) ** FALLOFF);
 				const forceX = force * Math.cos(theta);
 				const forceY = force * Math.sin(theta);
 
@@ -876,7 +1012,7 @@ const demos = {
 
 			const starDir = xMath.direction(this.x, this.y, centerX, centerY);
 			const starDist = xMath.distance(this.x, this.y, centerX, centerY);
-			const starForce = G * 2 / ((starDist/4) ** FALLOFF);
+			const starForce = G * 7 / ((starDist/5) ** FALLOFF);
 			const starGravX = starForce * Math.cos(starDir);
 			const starGravY = starForce * Math.sin(starDir);
 
@@ -918,8 +1054,10 @@ const demos = {
 				this.x = xMath.roll(canvasWidth);
 				this.y = xMath.roll(canvasHeight);
 			}
+		}, function(pjs){
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.ellipse(this.x, this.y, 3, 3);
 		});
-		ps.SHAPE = 'ellipse';
 
 		for(let i=0; i<NUM_PARTICLES; ++i){
 			const force = MAX_SPEED;
@@ -941,6 +1079,10 @@ const demos = {
 	},
 	// lattice: function(){},
 	lens: function(lensWidth=150, lensDepth=30){
+		// renderer.init({
+		// 	showFrameRate: true,
+		// 	showRuler: true,
+		// });
 		lensWidth = +lensWidth;
 		lensDepth = +lensDepth;
 		// const log = this.log.bind(this);
@@ -1127,6 +1269,10 @@ const demos = {
 		if(full === undefined){
 			return;
 		}
+		renderer.init({
+			showFrameRate: true,
+			showRuler: true,
+		});
 
 		const Vector = renderer.PVector.bind(renderer);
 		const tailPeriod = 20;
@@ -1236,6 +1382,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
+	// pendulum: function(){},
 	plasma: function(){
 		renderer.init({
 			background: 0,
@@ -1469,9 +1616,6 @@ const demos = {
 			const CW = Math.PI/tailPeriod * renderer.frameCount + this.unique;
 			const cosCW = Math.cos(CW);
 			const sinCW = Math.sin(CW);
-			// phase shift by PI/2
-			// const cosCW2 = -sinCW;
-			// const sinCW2 = cosCW;
 
 			const ctrl1X = this.x + x33 + 0.5*(x33 * -sinCW - y33 * cosCW);
 			const ctrl1Y = this.y + y33 + 0.5*(x33 * cosCW + y33 * -sinCW);
@@ -1511,8 +1655,10 @@ const demos = {
 				this.y = 0;
 				this.dy *= -1;
 			}
+		}, function(pjs){
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.ellipse(this.x, this.y, 2, 2);
 		});
-		ps.SHAPE = 'ellipse';
 
 		const direction = xMath.range(0, 2*Math.PI);
 		for(let i=0; i<NUM_BOIDS; ++i){
@@ -1572,6 +1718,7 @@ const demos = {
 	// 	renderer.init({
 	// 		width: 600,
 	// 		height: 600,
+	// 		showFrameRate: true,
 	// 		renderer: 'P3D'
 	// 		// renderer: 'WEBGL'
 	// 	});

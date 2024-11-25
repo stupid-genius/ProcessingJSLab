@@ -1,4 +1,13 @@
-function Particles(pjs, fn){
+function updateParticle(){
+	this.x += this.dx;
+	this.y += this.dy;
+}
+function renderParticle(pjs){
+	pjs.stroke(this.r, this.g, this.b, this.a);
+	pjs.point(this.x, this.y);
+}
+
+function Particles(pjs, updateFn=updateParticle, renderFn=renderParticle){
 	if(!new.target){
 		return new Particles(...arguments);
 	}
@@ -14,7 +23,6 @@ function Particles(pjs, fn){
 
 	this.ACCELERATION = [0, 0.25];
 	this.ELASTICITY = 0.2;
-	this.SHAPE = 'point';
 	this.MAX_COUNT = 3000;
 
 	Object.defineProperties(this, {
@@ -25,11 +33,12 @@ function Particles(pjs, fn){
 		},
 		createParticle: { // ttl, x, y, dx, dy, r, g, b, a
 			value: function(nttl, nx, ny, ndx, ndy, nr, ng, nb, na){
+				let newP;
 				if(head.prev.active){
 					if(count>=this.MAX_COUNT){
 						return;
 					}
-					const newP = new Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
+					newP = new Particle(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 					newP.next = head;
 					newP.prev = head.prev;
 					newP.prev.next = newP;
@@ -37,10 +46,11 @@ function Particles(pjs, fn){
 					head = newP;
 					++count;
 				}else{
-					const newP = head.prev;
+					newP = head.prev;
 					newP.activate(nttl, nx, ny, ndx, ndy, nr, ng, nb, na);
 					head = newP;
 				}
+				return newP;
 			}
 		},
 		list: {
@@ -52,9 +62,8 @@ function Particles(pjs, fn){
 			value: function(){
 				let cur = head;
 				while(cur.active){
-					fn.call(cur, this);
-					pjs.stroke(cur.r, cur.g, cur.b, cur.a);
-					pjs[this.SHAPE](cur.x, cur.y, 2, 2);
+					updateFn.call(cur, this);
+					renderFn.call(cur, pjs);
 
 					const dead = cur;
 					if(cur.ttl>0 && ++cur.t>=cur.ttl){
