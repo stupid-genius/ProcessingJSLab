@@ -35,7 +35,7 @@ const registry = Object.freeze({
 			if(name in demos){
 				this.echo(`Loading ${name}…`);
 				renderer.init();
-				demos[name].apply(demos, args);
+				demos[name].apply(this, args);
 			}
 		},
 		man: 'Load a demo.  Some demos accept additional arguments.\n<b>Example:</b>\n`load chaos 6`.',

@@ -145,7 +145,9 @@ const demos = {
 	},
 	balls: function(){
 		renderer.init({
+			// height: 1200,
 			showFrameRate: true,
+			// width: 1200
 		});
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -153,7 +155,7 @@ const demos = {
 		const ballWidth = 10;
 		const maxSpeed = 2;
 
-		const grid = new Space(ballWidth*2);
+		const grid = new Space(ballWidth*3);
 
 		const ps = new Particles(renderer, function(){
 			this.x += this.dx;
@@ -749,11 +751,18 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	fireworks: function(){
+	fireworks: function(size=1){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
+		size = +size;
+		const renderFn = size === 0 ? function(pjs){
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.point(this.x, this.y);
+		} : function(pjs){
+			pjs.fill(this.r, this.g, this.b, this.a);
+			pjs.ellipse(this.x, this.y, size*this.ttl/this.t, size*this.ttl/this.t);
+		};
 		const red = new Particles(renderer, function(){
-			// update
 			this.dx+=red.ACCELERATION[0];
 			this.dy+=red.ACCELERATION[1];
 			this.x+=this.dx;
@@ -764,9 +773,8 @@ const demos = {
 			this.g = 255*t*t;
 			this.b = 255*t*t*t*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		const blue = new Particles(renderer, function(){
-			// update
 			this.dx+=blue.ACCELERATION[0];
 			this.dy+=blue.ACCELERATION[1];
 			this.x+=this.dx;
@@ -777,9 +785,8 @@ const demos = {
 			this.g = 255*t*t;
 			this.r = 255*t*t*t*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		const green = new Particles(renderer, function(){
-			// update
 			this.dx+=green.ACCELERATION[0];
 			this.dy+=green.ACCELERATION[1];
 			this.x+=this.dx;
@@ -790,9 +797,8 @@ const demos = {
 			this.r = 255*t*t;
 			this.b = 255*t*t*t*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		const yellow = new Particles(renderer, function(){
-			// update
 			this.dx+=yellow.ACCELERATION[0];
 			this.dy+=yellow.ACCELERATION[1];
 			this.x+=this.dx;
@@ -803,7 +809,7 @@ const demos = {
 			this.g = 255*Math.pow(t, 0.2);
 			this.b = 255*t*t*t*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		const orange = new Particles(renderer, function(){
 			// update
 			this.dx+=orange.ACCELERATION[0];
@@ -816,7 +822,7 @@ const demos = {
 			this.b = 255*t*t*t*t;
 			this.g = 255*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		const purple = new Particles(renderer, function(){
 			// update
 			this.dx+=purple.ACCELERATION[0];
@@ -829,7 +835,7 @@ const demos = {
 			this.b = 255*Math.pow(t, 0.2);
 			this.g = 255*t*t*t*t;
 			this.a = 255*t;
-		});
+		}, renderFn);
 		red.ACCELERATION = [0, 0.15];
 		blue.ACCELERATION = [0, 0.15];
 		green.ACCELERATION = [0, 0.15];

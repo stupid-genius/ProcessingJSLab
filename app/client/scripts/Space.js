@@ -36,7 +36,7 @@ function Space(cellSize=10){
 			value: function(x, y){
 				const key = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
 				const cell = grid.get(key) ?? [];
-				grid.delete(key);
+				// grid.delete(key);
 				return cell;
 			}
 		},

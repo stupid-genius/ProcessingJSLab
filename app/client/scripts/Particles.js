@@ -23,7 +23,7 @@ function Particles(pjs, updateFn=updateParticle, renderFn=renderParticle){
 
 	this.ACCELERATION = [0, 0.25];
 	this.ELASTICITY = 0.2;
-	this.MAX_COUNT = 3000;
+	this.MAX_COUNT = 10000;
 
 	Object.defineProperties(this, {
 		count: {
