@@ -11,6 +11,10 @@
 		"ecmaVersion": 12
 	},
 	"rules": {
+		"complexity": [
+			"warn",
+			30
+		],
 		"indent": [
 			"warn",
 			"tab"

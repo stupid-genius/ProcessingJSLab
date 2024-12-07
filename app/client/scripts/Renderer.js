@@ -1,3 +1,4 @@
+const GIF = require('gif.js/dist/gif');
 const Logger = require('log-ng').default;
 // const Processing = require('https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js');
 // import * as Processing from 'https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js';
@@ -6,13 +7,40 @@ const Logger = require('log-ng').default;
 
 /*
  * TODO
- * - [ ] Implement `showFrameRate`
- * - [ ] Implement `showRuler`
  * - [ ] Implement `pixelWidth`
  * - [ ] Implement `pixelHeight`
  */
 
 const logger = new Logger('Renderer.js');
+
+// https://regex101.com/r/PQqPgw/2
+// const funcParsePattern = /^(?:function\s*\w*\s*)?\(\s*([\s\S]*?)\s*\)\s*(?:=>)?\s*{?\s*([\s\S]*?)\s*}?;?$/;
+
+// const frameRateFn = function(pjs){
+// 	pjs.fill(255);
+// 	pjs.textSize(12);
+// 	pjs.text(pjs.__frameRate, pjs.width-50, pjs.height-10);
+// }.toString().match(funcParsePattern);
+// const rulerFn = function(pjs){
+// 	const xCenter = pjs.width/2;
+// 	const yCenter = pjs.height/2;
+
+// 	pjs.stroke(255);
+// 	pjs.line(0, yCenter, pjs.width, yCenter);
+// 	pjs.line(xCenter, 0, xCenter, pjs.height);
+// 	for(let i=rulerInc; i<pjs.width; i+=rulerInc){
+// 		pjs.point(xCenter+i, yCenter-1);
+// 		pjs.point(xCenter-i, yCenter-1);
+// 		pjs.point(xCenter+i, yCenter+1);
+// 		pjs.point(xCenter-i, yCenter+1);
+// 	}
+// 	for(let i=rulerInc; i<pjs.height; i+=rulerInc){
+// 		pjs.point(xCenter-1, yCenter+i);
+// 		pjs.point(xCenter-1, yCenter-i);
+// 		pjs.point(xCenter+1, yCenter+i);
+// 		pjs.point(xCenter+1, yCenter-i);
+// 	}
+// }.toString().match(funcParsePattern);
 
 function Image(pimage, pjs){
 	if(!new.target){
@@ -146,14 +174,8 @@ function Renderer(canvas){
 	if(!new.target){
 		return new Renderer(...arguments);
 	}
-	const proxy = new Proxy(this, {
-		get: function(target, prop){
-			return target[prop] ?? pjs[prop];
-		}
-	});
-
 	Object.defineProperty(Renderer, 'instance', {
-		value: proxy
+		value: this
 	});
 
 	// { Processing, PFont } = await import('https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js');
@@ -168,14 +190,18 @@ function Renderer(canvas){
 		width: canvas.width
 	};
 	let pjs;
+
 	let showFrameRate = false;
 	let showRuler = false;
 	const rulerInc = 50;
 
-	// text output location
-	// const xOut = 0;
-	// const yOut = 0;
-	// const sizeOut = 12;
+	const gif = new GIF({
+		workers: navigator.hardwareConcurrency-2,
+		quality: 10
+	});
+	let videoCapture = false;
+
+	const sizeOut = 12;
 	const maxOut = 5;
 	const out = [];
 
@@ -216,8 +242,38 @@ function Renderer(canvas){
 								pjs.point(xCenter+1, yCenter-i);
 							}
 						}
+						if(videoCapture){
+							gif.addFrame(canvas, {copy: true, delay: 1000/pjs.frameRate()});
+						}
+						if(out.length > 0){
+							pjs.fill(255);
+							pjs.textSize(sizeOut);
+							for(let i=0; i<out.length; ++i){
+								pjs.text(out[i], pjs.width-200, pjs.height-300 + i*sizeOut);
+							}
+							out.length = 0;
+						}
 					}
 				});
+
+				// let { 0: parsedFn, 1: parsedArgs, 2: parsedBody } = funcParsePattern.exec(fn.toString());
+				// if(parsedFn === null){
+				// 	logger.error('frame function could not be parsed');
+				// 	return;
+				// }
+				// const args = new Set(parsedArgs.split(',').map((arg) => arg.trim()));
+				// if(showFrameRate){
+				// 	args.add('pjs');
+				// 	parsedBody += frameRateFn[2];
+				// }
+				// if(showRuler){
+				// 	args.add('pjs');
+				// 	parsedBody += rulerFn[2];
+				// }
+
+				// const newFn = new Function(...args, parsedBody);
+				// console.log(newFn.toString());
+
 				Object.defineProperty(pjs, 'draw', {
 					value: newFn,
 					writable: true
@@ -248,6 +304,7 @@ function Renderer(canvas){
 					canvas = newCanvas;
 				}
 				const config = Object.assign({}, defaultConfig, custom);
+				const echo = this.echo.bind(this);
 				/* eslint-disable-next-line no-undef */
 				pjs = new Processing(canvas, (processingjs) => {
 					logger.info('Processing.js created');
@@ -255,7 +312,9 @@ function Renderer(canvas){
 
 					Object.defineProperties(processingjs, {
 						keyPressed: {
-							value: function(){
+							value: function keyboardHandler(){
+								// console.log(`key ${processingjs.key} keyCode ${processingjs.keyCode}`);
+								console.log(processingjs.I, processingjs.V);
 								switch(processingjs.keyCode){
 								case processingjs.UP:
 									processingjs.loop();
@@ -264,10 +323,31 @@ function Renderer(canvas){
 									processingjs.noLoop();
 									break;
 								case processingjs.LEFT:
-									processingjs.save('image.png');
+									switch(keyboardHandler.mode){
+									case processingjs.I:
+										processingjs.save('image.png');
+										break;
+									case processingjs.v:
+										if(videoCapture){
+											gif.on('finished', function(blob){
+												window.open(URL.createObjectURL(blob));
+											});
+										}
+										videoCapture = !videoCapture;
+										break;
+									}
 									break;
 								case processingjs.RIGHT:
 									processingjs.redraw();
+									break;
+								case processingjs.i:
+									keyboardHandler.mode = processingjs.I;
+									echo('Image capture mode');
+									break;
+								case processingjs.V:
+									keyboardHandler.mode = processingjs.V;
+									echo('Video capture mode');
+									break;
 								}
 							},
 							writable: true
@@ -288,6 +368,8 @@ function Renderer(canvas){
 						}
 					});
 				});
+
+				Object.setPrototypeOf(this, pjs);
 			}
 		},
 		input: {
@@ -312,7 +394,7 @@ function Renderer(canvas){
 	});
 	this.init();
 
-	return proxy;
+	// return proxy;
 }
 
 

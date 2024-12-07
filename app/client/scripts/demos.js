@@ -181,6 +181,8 @@ const demos = {
 			for(let i=0; i<cell.length; ++i){
 				const other = cell[i];
 				if(other === this){
+					// this is the correct method, but requires that I also pull the negihboring cells
+					// grid.remove(this.x, this.y, this);
 					continue;
 				}
 				const distance = Math.hypot(this.x - other.x, this.y - other.y);
@@ -220,6 +222,38 @@ const demos = {
 
 		renderer.frame = function(){
 			renderer.background(0);
+			ps.render();
+		};
+		renderer.loop();
+	},
+	blackhole: function(){
+		renderer.init({
+		});
+
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
+
+		const blackholeWidth = 25;
+		const NUM_PARTICLES = 200;
+
+		const ps = new Particles(renderer, function(pjs){
+		});
+
+		// create particles
+		for(let i=0; i<NUM_PARTICLES; ++i){
+			// ttl, x, y, dx, dy, r, g, b, a
+			// ps.createParticle(0, xMath.range(10.01, centerX+10), xMath.range(centerY-10.01, centerY+10), xMath.range(-1, 1.01), xMath.range(-1, 1.01), ...xMath.randomColor());
+		}
+
+		renderer.frame = function(){
+			renderer.background(0);
+
+			renderer.stroke(255);
+			renderer.fill(0);
+			renderer.ellipse(centerX, centerY, blackholeWidth, blackholeWidth);
+
 			ps.render();
 		};
 		renderer.loop();
@@ -484,7 +518,7 @@ const demos = {
 
 		renderer.loop();
 	},
-	chaos: function(simplex='3'){
+	chaos: function(simplex='3', center, altForce){
 		renderer.init({
 			frameRate: 400
 		});
@@ -495,7 +529,7 @@ const demos = {
 		const radius = xCenter-50;
 		const RADIAN = Math.PI/180;
 
-		const attractors = {
+		const attractors = center === 'alt' ? {
 			'3': [
 				{
 					x: canvasWidth/2,
@@ -508,6 +542,24 @@ const demos = {
 				{
 					x: canvasWidth-50,
 					y: canvasHeight-50
+				}
+			],
+			'4': [
+				{
+					x: canvasWidth/2,
+					y: 50
+				},
+				{
+					x: 50,
+					y: canvasHeight-50
+				},
+				{
+					x: canvasWidth-50,
+					y: canvasHeight-50
+				},
+				{
+					x: xCenter,
+					y: yCenter
 				}
 			],
 			'5': [
@@ -532,38 +584,69 @@ const demos = {
 					y: yCenter
 				}
 			],
-			'6': [
+			// serpinski carpet
+			'8': [
 				{
-					x: Math.cos(0)*radius + xCenter,
-					y: Math.sin(0)*radius + yCenter
+					x: 50,
+					y: 50
 				},
 				{
-					x: Math.cos(60*RADIAN)*radius + xCenter,
-					y: Math.sin(60*RADIAN)*radius + yCenter
+					x: canvasWidth-50,
+					y: 50
 				},
 				{
-					x: Math.cos(120*RADIAN)*radius + xCenter,
-					y: Math.sin(120*RADIAN)*radius + yCenter
+					x: canvasWidth-50,
+					y: canvasHeight-50
 				},
 				{
-					x: Math.cos(180*RADIAN)*radius + xCenter,
-					y: Math.sin(180*RADIAN)*radius + yCenter
+					x: 50,
+					y: canvasHeight-50
 				},
 				{
-					x: Math.cos(240*RADIAN)*radius + xCenter,
-					y: Math.sin(240*RADIAN)*radius + yCenter
+					x: xCenter,
+					y: 50
 				},
 				{
-					x: Math.cos(300*RADIAN)*radius + xCenter,
-					y: Math.sin(300*RADIAN)*radius + yCenter
+					x: canvasWidth-50,
+					y: yCenter
+				},
+				{
+					x: xCenter,
+					y: canvasHeight-50
+				},
+				{
+					x: 50,
+					y: yCenter
 				}
 			]
-		}[simplex];
-		const force = {
-			'3': 2,
-			'5': 1.5,
-			'6': 1.5
-		}[simplex];
+		}[simplex] : ((numAttractors) => {
+			const attractors = [];
+			for(let i=0; i<numAttractors; ++i){
+				const angle = (i * (360/numAttractors) - 90) * RADIAN;
+				attractors.push({
+					x: Math.cos(angle) * radius + xCenter,
+					y: Math.sin(angle) * radius + yCenter
+				});
+			}
+			if(center === 'center'){
+				attractors.push({
+					x: xCenter,
+					y: yCenter
+				});
+			}
+			return attractors;
+		})(+simplex);
+		const force = center === 'alt' ? {
+			'3': 0.5,
+			'4': 0.573,
+			'5': 0.666667,
+			'8': 0.666667
+		}[simplex] : altForce ?? {
+			'0': 1/(1+Math.tan(Math.PI/simplex)),
+			'1': 1/(1+2*Math.sin(Math.PI/(2*simplex))),
+			'2': 1/(1+Math.sin(Math.PI/simplex)),
+			'3': 1/(1+2*Math.sin(Math.PI/(2*simplex))),
+		}[+simplex % 4];
 
 		renderer.background(0);
 		renderer.stroke(255, 255, 255, 255);
@@ -574,8 +657,8 @@ const demos = {
 		let y = Math.random()*canvasHeight;
 		renderer.frame = function(){
 			const a = xMath.roll(attractors.length);
-			x += (attractors[a].x - x)/force;
-			y += (attractors[a].y - y)/force;
+			x += (attractors[a].x - x)*force;
+			y += (attractors[a].y - y)*force;
 			renderer.point(x, y);
 		};
 		renderer.loop();
@@ -644,6 +727,7 @@ const demos = {
 	// 	renderer.draw();
 	// },
 	// egg: function(){},
+	// fern: function(){},
 	fire: function(){
 		renderer.init({
 			background: 0,
@@ -747,7 +831,7 @@ const demos = {
 			}
 			ps.render();
 			buffers.flip();
-			// gamma.blit(0, 0);
+			gamma.blit(0, 0);
 		};
 		renderer.loop();
 	},
@@ -946,7 +1030,7 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	graviton: function(gravity=3.4, numParticles=20){
+	graviton: function(numParticles=20, gravity=6.67430e-11){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
 		const centerX = canvasWidth/2;
@@ -958,6 +1042,9 @@ const demos = {
 		const MAX_SPEED = 6;
 		const FALLOFF = 2;
 		const G = +gravity;
+		const M_s = 1e7;
+		const M_p = 1e6;
+		const SCALING = 1.0312;
 
 		const ps = new Particles(renderer, function(pjs){
 			let gravX = 0;
@@ -976,7 +1063,7 @@ const demos = {
 
 				const dist = xMath.distance(this.x, this.y, cur.x, cur.y);
 				const theta = xMath.direction(this.x, this.y, cur.x, cur.y);
-				const force = G * 3 / ((dist/3) ** FALLOFF);
+				const force = G * M_p * M_p / ((dist/SCALING) ** FALLOFF);
 				const forceX = force * Math.cos(theta);
 				const forceY = force * Math.sin(theta);
 
@@ -1018,7 +1105,7 @@ const demos = {
 
 			const starDir = xMath.direction(this.x, this.y, centerX, centerY);
 			const starDist = xMath.distance(this.x, this.y, centerX, centerY);
-			const starForce = G * 7 / ((starDist/5) ** FALLOFF);
+			const starForce = G * M_s * M_p / ((starDist/SCALING) ** FALLOFF);
 			const starGravX = starForce * Math.cos(starDir);
 			const starGravY = starForce * Math.sin(starDir);
 
@@ -1055,10 +1142,6 @@ const demos = {
 			}else if (this.y < 0){
 				this.y = 0;
 				this.dy *= -1;
-			}
-			if(this.x === 0 && this.y === 0){
-				this.x = xMath.roll(canvasWidth);
-				this.y = xMath.roll(canvasHeight);
 			}
 		}, function(pjs){
 			pjs.stroke(this.r, this.g, this.b, this.a);
@@ -1262,7 +1345,294 @@ const demos = {
 		};
 		renderer.loop();
 	},
-	// orbit: function(){},
+	// light: function(){}, // don't remember what this is; double-slit experiment?
+	orbit: function(guidance, trace='off', gravity=6.67430e-11){
+		renderer.init({
+			showRuler: trace === 'full'
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
+
+		const Vector = renderer.PVector.bind(renderer);
+		const starRadius = 25;
+
+		const FALLOFF = 2;
+		const G = +gravity * 1;
+		const M_s = 1e13*2;
+		const M_p = 1;
+		const SCALING = 2;
+
+		const targetAltitude = canvasHeight/4;
+		let targetVelocity = Math.sqrt(G * M_s * M_p / targetAltitude);
+		const thrust = 5e-2;
+
+		const ps = new Particles(renderer, function(){
+			const vStar = new Vector(centerX, centerY);
+			const vParticle = new Vector(this.x, this.y);
+			vParticle.sub(vStar);
+			const v = new Vector(this.dx, this.dy);
+			const vDir = xMath.direction(0, 0, v.x, v.y);
+			const vMag = v.mag();
+			const vTangential = new Vector(vParticle.y, -vParticle.x);
+			vTangential.normalize();
+			const tangentialThrust = Math.sign(v.x * vParticle.y - v.y * vParticle.x);
+			vTangential.mult(tangentialThrust);
+
+			// gravity well from star
+			const starDir = xMath.direction(this.x, this.y, centerX, centerY);
+			const starDist = vParticle.mag();
+			const starForce = G * M_s * M_p / ((starDist/SCALING) ** FALLOFF);
+			const vStarGrav = new Vector(Math.cos(starDir), Math.sin(starDir));
+
+			// potential energy
+			const E_p = -G * M_s * M_p / starDist;
+			// kinetic energy
+			const E_k = 0.5 * M_p * vMag**2;
+			// total energy
+			const E = E_k + E_p;
+			// radial velocity
+			const v_r = v.dot(vParticle) / starDist;
+			// tangential velocity
+			const v_t = Math.sqrt(vMag**2 - (v_r**2));
+
+			// semi-major axis
+			// const a = -0.5 * G * M / E;
+			// eccentricity
+			// const e = Math.sqrt(1 - (2 * E * (this.dx**2 + this.dy**2)) / (G * M * M));
+			// calculate period
+			// calculate true anomaly
+			// calculate eccentric anomaly
+			// calculate mean anomaly
+			// calculate mean motion
+			// calculate time of perihelion passage
+			// console.groupCollapsed('orbit stats');
+			// console.groupEnd();
+
+			const status = [];
+			let action = '';
+
+			this.thrustX = 0;
+			this.thrustY = 0;
+			if(guidance !== 'off'){
+				const vTargetVel_r = new Vector(vParticle.x, vParticle.y);
+				vTargetVel_r.normalize();
+				const vTargetVel_t = new Vector(vTargetVel_r.y, -vTargetVel_r.x);
+				if(E >= 0){
+					status.push('ub'); // unbound
+					targetVelocity = Math.sqrt(G * M_s * M_p / starDist);
+					vTargetVel_r.mult(targetVelocity);
+					vTargetVel_t.mult(targetVelocity);
+
+					if(vMag > targetVelocity){
+						const highRadial = Math.abs(v_r) > vTargetVel_r.mag();
+						const highTangential = Math.abs(v_t) > vTargetVel_t.mag();
+						if(highRadial){
+							if(v_r > 0){
+								status.push('hra'); // high radial ascent
+								if(starDist < targetAltitude && !highTangential){
+									action += '\nincrease tangential velocity';
+									this.thrustX += vTangential.x;
+									this.thrustY += vTangential.y;
+								}else{
+									action += '\nreduce radial velocity';
+									this.thrustX += vStarGrav.x;
+									this.thrustY += vStarGrav.y;
+								}
+							}else{
+								status.push('hrd'); // high radial descent
+								if(starDist < targetAltitude){
+									action += '\nincrease radial velocity';
+									this.thrustX += -vStarGrav.x;
+									this.thrustY += -vStarGrav.y;
+								}else if(!highTangential){
+									action += '\nincrease tangential velocity';
+									this.thrustX += vTangential.x;
+									this.thrustY += vTangential.y;
+								}
+							}
+						}else{ // don't over correct
+							if(v_r > 0){
+								status.push('sra'); // slow radial ascent
+								action += '\nincrease radial velocity';
+								this.thrustX += -vStarGrav.x;
+								this.thrustY += -vStarGrav.y;
+							}else{
+								status.push('srd'); // slow radial descent
+								action += '\nincrease radial velocity';
+								this.thrustX += -vStarGrav.x;
+								this.thrustY += -vStarGrav.y;
+							}
+						}
+						if(highTangential){
+							status.push('ft'); // fast tangential
+							action += '\nreduce tangential velocity';
+							this.thrustX += -vTangential.x;
+							this.thrustY += -vTangential.y;
+						}else{
+							status.push('st'); // slow tangential
+							action += '\nincrease tangential velocity';
+							this.thrustX += vTangential.x;
+							this.thrustY += vTangential.y;
+						}
+					}else{
+						if(starDist > targetAltitude){
+							status.push('ha'); // high altitude
+							// action += '\nreduce altitude';
+							// this.thrustX += vStarGrav.x;
+							// this.thrustY += vStarGrav.y;
+						}else{
+							status.push('la'); // low altitude
+							// action += '\nincrease altitude';
+							// this.thrustX += -vStarGrav.x;
+							// this.thrustY += -vStarGrav.y;
+						}
+					}
+				}else{
+					status.push('b'); // bound
+					targetVelocity = Math.sqrt(2 * G * M_s * M_p / starDist);
+					vTargetVel_r.mult(targetVelocity);
+					vTargetVel_t.mult(targetVelocity);
+
+					if(vMag < targetVelocity){
+						if(v_t < vTargetVel_t.mag()){
+							status.push('s'); // bound, slow
+							if(starDist > targetAltitude){
+								status.push('ha'); // high altitude
+							// 	action += '\nreduce altitude';
+							// 	this.thrustX += vStarGrav.x;
+							// 	this.thrustY += vStarGrav.y;
+							}
+							action += '\nincreasing tangential velocity';
+							this.thrustX += vTangential.x;
+							this.thrustY += vTangential.y;
+						}
+
+						if(Math.abs(v_r) > vTargetVel_r.mag()){
+							status.push('fr'); // fast radial
+						// 	action += '\nreduce radial velocity';
+						// 	this.thrustX += -vStarGrav.x;
+						// 	this.thrustY += -vStarGrav.y;
+						}
+						if(Math.abs(v_r) < vTargetVel_r.mag()){
+							status.push('sr'); // slow radial
+						// 	action += '\nincrease radial velocity';
+						// 	this.thrustX += vStarGrav.x;
+						// 	this.thrustY += vStarGrav.y;
+						}
+					}else if(vMag > targetVelocity){
+						// probably not bound
+						status.push('?');
+					}
+				}
+
+				const collisionAngle = 2 * Math.atan(starRadius / starDist);
+				const safetyBuffer = Math.PI / 8;
+				const deltaAngle = (starDir - vDir + Math.PI) % (2 * Math.PI) - Math.PI;
+				if(Math.abs(deltaAngle) < collisionAngle){
+					status.push('c'); // collision
+					const newDir = starDir + Math.sign(-deltaAngle) * (Math.PI / 2 + safetyBuffer);
+					action += `\nalter course (${vDir.toFixed(2)} -> ${newDir.toFixed(2)})`;
+					const newV = new Vector(Math.cos(newDir), Math.sin(newDir));
+					this.thrustX += newV.x;
+					this.thrustY += newV.y;
+
+					if(trace === 'full'){
+						newV.setMag(thrust);
+						renderer.stroke(255, 128, 64, 255);
+						renderer.line(this.x, this.y, this.x + newV.x, this.y + newV.y);
+					}
+				}
+
+				// Calculate deviation magnitudes
+				// const targetEnergy = -G * M_s * M_p / (2 * starDist);
+				const targetEnergy = 0.5 * M_p * targetVelocity**2 - G * M_s * M_p / targetAltitude;
+				const energyDeviation = Math.abs(E - targetEnergy) / Math.abs(targetEnergy);
+				const radialDeviation = Math.abs(v_r) / Math.max(Math.abs(vTargetVel_r.mag()), 1e-6);
+				const tangentialDeviation = Math.abs(v_t - vTargetVel_t.mag()) / Math.max(vTargetVel_t.mag(), 1e-6);
+
+				// Compute an adaptive damping factor based on deviations
+				const dampingFactor = Math.min(1, Math.max(0.1, 1 - 0.5 * (energyDeviation + radialDeviation + tangentialDeviation)));
+
+				// normalize thrust
+				const vThrust = new Vector(this.thrustX, this.thrustY);
+				vThrust.normalize();
+				vThrust.mult(thrust * dampingFactor);
+				this.thrustX = vThrust.x;
+				this.thrustY = vThrust.y;
+			}
+
+			vStarGrav.mult(starForce);
+			this.ddx = vStarGrav.x + this.thrustX;
+			this.ddy = vStarGrav.y + this.thrustY;
+
+			this.dx += this.ddx;
+			this.dy += this.ddy;
+
+			this.x += this.dx;
+			this.y += this.dy;
+
+			if(this.x >= canvasWidth - 1){
+				this.x = canvasWidth - 1;
+				this.dx = 0;
+			}else if(this.x < 0){
+				this.x = 0;
+				this.dx = 0;
+			}
+			if(this.y >= canvasHeight - 1){
+				this.y = canvasHeight - 1;
+				this.dy = 0;
+			}else if (this.y < 0){
+				this.y = 0;
+				this.dy = 0;
+			}
+
+			if(trace === 'full'){
+				const out = `x: ${this.x}\ny: ${this.y}\ndx: ${this.dx}\ndy: ${this.dy}\nddx: ${this.ddx}\nddy: ${this.ddy}
+E: ${E}\nE_p: ${E_p}\nE_k: ${E_k}
+v_t: ${v_t}\nv_r: ${v_r}\nv: ${vMag}\nvTarg: ${targetVelocity}\ndist: ${starDist}
+thrustX: ${this.thrustX}\nthrustY: ${this.thrustY}
+status: ${status.join(', ') ?? 'pending'}\naction: ${action ?? ''}`;
+				renderer.text(out, 20, renderer.height-300);
+
+				renderer.stroke(128, 128, 255, 255);
+				renderer.line(this.x, this.y, this.x + vTangential.x*50, this.y + vTangential.y*50);
+			}
+		}, function(pjs){
+			pjs.fill(this.r, this.g, this.b, this.a);
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.ellipse(this.x, this.y, 3, 3);
+
+			if(trace === 'full'){
+				pjs.line(centerX, centerY, this.x, this.y);
+
+				const vVel = new Vector(this.dx, this.dy);
+				vVel.mult(10);
+				const vAccel = new Vector(this.thrustX, this.thrustY);
+				vAccel.mult(1e3);
+
+				pjs.stroke(0, 255, 0, 255);
+				pjs.line(this.x, this.y, this.x+vVel.x, this.y+vVel.y);
+				pjs.stroke(255, 0, 0, 255);
+				pjs.line(this.x, this.y, this.x+vAccel.x, this.y+vAccel.y);
+			}
+		});
+
+		ps.createParticle(0, xMath.roll(canvasWidth), xMath.roll(canvasHeight), 1, 1, 255, 255, 255, 255);
+		renderer.frame = function(){
+			if(trace !== 'on'){
+				renderer.background(0);
+			}
+			ps.render();
+
+			renderer.fill(255, 255, 200);
+			renderer.stroke(255, 255, 0);
+			renderer.ellipse(centerX, centerY, starRadius, starRadius);
+		};
+		renderer.background(0);
+		renderer.loop();
+	},
 	pattern: function(full){
 		const bg = renderer.createImage();
 		const height = bg.height;
@@ -1720,105 +2090,105 @@ const demos = {
 		renderer.loop();
 	},
 	// sand: function(){},
-	// shader: function(){
-	// 	renderer.init({
-	// 		width: 600,
-	// 		height: 600,
-	// 		showFrameRate: true,
-	// 		renderer: 'P3D'
-	// 		// renderer: 'WEBGL'
-	// 	});
-	// 	const canvasWidth = renderer.width;
-	// 	const canvasHeight = renderer.height;
+	shader: function(){
+		renderer.init({
+			// width: 600,
+			// height: 600,
+			showFrameRate: true,
+			// renderer: 'P3D'
+			renderer: 'WEBGL'
+		});
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
 
-	// 	const vertShaderSrc = `
-	// 		attribute vec3 aPosition;
-	// 		void main(){
-	// 			gl_PointSize = 10.0;
-	// 			gl_Position = vec4(aPosition, 1.0);
-	// 		}
-	// 	`;
-	// 	const fragShaderSrc = `
-	// 		precision mediump float;
-	// 		void main(){
-	// 			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green
-	// 		}
-	// 	`;
+		const vertShaderSrc = `
+			attribute vec3 aPosition;
+			void main(){
+				gl_PointSize = 10.0;
+				gl_Position = vec4(aPosition, 1.0);
+			}
+		`;
+		const fragShaderSrc = `
+			precision mediump float;
+			void main(){
+				gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green
+			}
+		`;
 
-	// 	const gl = renderer.externals.context;
-	// 	gl.viewport(0, 0, canvasWidth, canvasHeight);
+		const gl = renderer.externals.context;
+		gl.viewport(0, 0, canvasWidth, canvasHeight);
 
-	// 	console.log('Canvas width:', gl.canvas.width, 'Height:', gl.canvas.height);
-	// 	console.log('Viewport dimensions:', gl.getParameter(gl.VIEWPORT));
-	// 	console.log('Max viewport dims:', gl.getParameter(gl.MAX_VIEWPORT_DIMS));
-	// 	console.log('Supported extensions:', gl.getSupportedExtensions());
-	// 	console.log('Max vertex attribs:', gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
-	// 	console.log('Max texture size:', gl.getParameter(gl.MAX_TEXTURE_SIZE));
+		console.log('Canvas width:', gl.canvas.width, 'Height:', gl.canvas.height);
+		console.log('Viewport dimensions:', gl.getParameter(gl.VIEWPORT));
+		console.log('Max viewport dims:', gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+		console.log('Supported extensions:', gl.getSupportedExtensions());
+		console.log('Max vertex attribs:', gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+		console.log('Max texture size:', gl.getParameter(gl.MAX_TEXTURE_SIZE));
 
-	// 	const vertShader = compileShader(gl, vertShaderSrc, gl.VERTEX_SHADER);
-	// 	const fragShader = compileShader(gl, fragShaderSrc, gl.FRAGMENT_SHADER);
+		const vertShader = compileShader(gl, vertShaderSrc, gl.VERTEX_SHADER);
+		const fragShader = compileShader(gl, fragShaderSrc, gl.FRAGMENT_SHADER);
 
-	// 	// Link shaders into a program
-	// 	const shaderProgram = gl.createProgram();
-	// 	gl.attachShader(shaderProgram, vertShader);
-	// 	gl.attachShader(shaderProgram, fragShader);
-	// 	gl.linkProgram(shaderProgram);
+		// Link shaders into a program
+		const shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertShader);
+		gl.attachShader(shaderProgram, fragShader);
+		gl.linkProgram(shaderProgram);
 
-	// 	if(!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
-	// 		console.error('Could not link shaders:', gl.getProgramInfoLog(shaderProgram));
-	// 	}
+		if(!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
+			console.error('Could not link shaders:', gl.getProgramInfoLog(shaderProgram));
+		}
 
-	// 	gl.useProgram(shaderProgram);
+		gl.useProgram(shaderProgram);
 
-	// 	// const vertices = new Float32Array([
-	// 	// 	0.0,  0.8, 0.0,  // Top
-	// 	// 	-0.8, -0.8, 0.0,  // Bottom left
-	// 	// 	0.8, -0.8, 0.0   // Bottom right
-	// 	// ]);
-	// 	const vertices = new Float32Array([
-	// 		0.0, 0.0, 0.0  // Center point
-	// 	]);
+		// const vertices = new Float32Array([
+		// 	0.0,  0.8, 0.0,  // Top
+		// 	-0.8, -0.8, 0.0,  // Bottom left
+		// 	0.8, -0.8, 0.0   // Bottom right
+		// ]);
+		const vertices = new Float32Array([
+			0.0, 0.0, 0.0  // Center point
+		]);
 
-	// 	const vertexBuffer = gl.createBuffer();
-	// 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	// 	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+		const vertexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-	// 	const bufferData = gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE);
-	// 	console.log('Buffer size (bytes):', bufferData);
+		const bufferData = gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE);
+		console.log('Buffer size (bytes):', bufferData);
 
-	// 	const aPosition = gl.getAttribLocation(shaderProgram, 'aPosition');
-	// 	gl.enableVertexAttribArray(aPosition);
-	// 	gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
+		const aPosition = gl.getAttribLocation(shaderProgram, 'aPosition');
+		gl.enableVertexAttribArray(aPosition);
+		gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
 
-	// 	if(aPosition === -1){
-	// 		console.error('Attribute aPosition not found in shader');
-	// 		return;
-	// 	}
-	// 	console.log('aPosition location: ', gl.getAttribLocation(shaderProgram, 'aPosition'));
+		if(aPosition === -1){
+			console.error('Attribute aPosition not found in shader');
+			return;
+		}
+		console.log('aPosition location: ', gl.getAttribLocation(shaderProgram, 'aPosition'));
 
-	// 	gl.disable(gl.CULL_FACE);
-	// 	gl.disable(gl.DEPTH_TEST);
+		gl.disable(gl.CULL_FACE);
+		gl.disable(gl.DEPTH_TEST);
 
-	// 	const error = gl.getError();
-	// 	if(error !== gl.NO_ERROR){
-	// 		console.error('WebGL error during setup:', error);
-	// 	}
+		const error = gl.getError();
+		if(error !== gl.NO_ERROR){
+			console.error('WebGL error during setup:', error);
+		}
 
-	// 	renderer.frame = function(){
-	// 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	// 		gl.clear(gl.COLOR_BUFFER_BIT);
+		renderer.frame = function(){
+			gl.clearColor(0.0, 0.0, 0.0, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
 
-	// 		gl.drawArrays(gl.POINTS, 0, 1);
-	// 		// gl.drawArrays(gl.TRIANGLES, 0, 3);
-	// 		gl.flush();
+			gl.drawArrays(gl.POINTS, 0, 1);
+			// gl.drawArrays(gl.TRIANGLES, 0, 3);
+			gl.flush();
 
-	// 		const error = gl.getError();
-	// 		if(error !== gl.NO_ERROR){
-	// 			console.error('WebGL error during draw:', error);
-	// 		}
-	// 	};
-	// 	renderer.loop();
-	// },
+			const error = gl.getError();
+			if(error !== gl.NO_ERROR){
+				console.error('WebGL error during draw:', error);
+			}
+		};
+		renderer.loop();
+	},
 	snow: function(){
 		const canvasWidth = renderer.width;
 		const canvasHeight = renderer.height;
@@ -1975,7 +2345,61 @@ const demos = {
 		renderer.loop();
 	},
 	// spacewar: function(){},
-	// wormhole: function(){},
+	wormhole: function(){
+		renderer.init({
+			// showFrameRate: true,
+		});
+
+		const canvasWidth = renderer.width;
+		const canvasHeight = renderer.height;
+		const centerX = canvasWidth/2;
+		const centerY = canvasHeight/2;
+
+		const FRAME_MOD = 1;
+		const NUM_PARTICLES = 30;
+
+		const ps = new Particles(renderer, function(){
+			this.dx *= 1.01;
+			this.dy *= 1.01;
+
+			this.x += this.dx;
+			this.y += this.dy;
+
+			if(this.x < 0 || this.x >= canvasWidth || this.y < 0 || this.y >= canvasHeight){
+				this.active = false;
+			}
+		}, function(pjs){
+			pjs.stroke(this.r, this.g, this.b, this.a);
+			pjs.point(this.x, this.y, 2, 2);
+		});
+
+		function particleRing(x, y, radius, numParticles, speed, r, g, b, a){
+			const angleStep = 2*Math.PI/numParticles;
+			for(let i=0; i<numParticles; ++i){
+				const theta = angleStep * i;
+				const xPos = x + Math.cos(theta) * radius;
+				const yPos = y + Math.sin(theta) * radius;
+				const dx = Math.cos(theta) * speed;
+				const dy = Math.sin(theta) * speed;
+				ps.createParticle(0, xPos, yPos, dx, dy, r, g, b, a);
+			}
+		}
+
+		let x = centerX;
+		let y = centerY;
+		renderer.frame = function(){
+			renderer.background(0);
+
+			if(renderer.frameCount % FRAME_MOD === 0){
+				x = centerX + Math.cos(renderer.frameCount/100) * 100;
+				y = centerY + Math.sin(renderer.frameCount/100) * 100;
+				particleRing(x, y, 1, NUM_PARTICLES, 1, 255, 255, 255, 255);
+			}
+
+			ps.render();
+		};
+		renderer.loop();
+	},
 	// zaxxon: function(){}
 };
 module.exports = demos;

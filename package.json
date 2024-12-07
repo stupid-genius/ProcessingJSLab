@@ -15,6 +15,7 @@
 	"dependencies": {
 		"ejs": "2.5.5",
 		"express": "^4.17.1",
+		"gif.js": "github:jnordberg/gif.js",
 		"log-ng": "github:stupid-genius/log-ng",
 		"morgan": "^1.10.0",
 		"serve-favicon": "^2.5.0",

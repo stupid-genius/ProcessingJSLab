@@ -109,8 +109,6 @@ function Particles(pjs, updateFn=updateParticle, renderFn=renderParticle){
 					this.dy = ndy;
 					this.ddx = 0;
 					this.ddy = 0;
-					this.dddx = 0;
-					this.dddy = 0;
 					this.r = nr;
 					this.g = ng;
 					this.b = nb;
