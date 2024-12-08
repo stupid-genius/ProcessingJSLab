@@ -70,6 +70,19 @@ const xMath = Object.freeze({
 		return y[0];
 	},
 	fastTrig: FastTrig(),
+	intersection: (x1, y1, x2, y2, x3, y3, x4, y4) => {
+		const d = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+		if(d === 0){
+			return null;
+		}
+
+		const a = x1*y2 - y1*x2;
+		const b = x3*y4 - y3*x4;
+		const x = (a*(x3-x4) - (x1-x2)*b) / d;
+		const y = (a*(y3-y4) - (y1-y2)*b) / d;
+
+		return [x, y];
+	},
 	invSqrt: (x) => {
 		return 1 / Math.sqrt(x);
 	},

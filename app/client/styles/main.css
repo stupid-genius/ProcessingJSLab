@@ -14,6 +14,11 @@ canvas{
 	aspect-ratio: 1/1;
 	height: 100%;
 }
+canvas#rod{
+	display: block;
+	width: 100vw;
+	height: 100vh;
+}
 ng-terminal{
 	flex-grow: 1;
 	height: 100%;

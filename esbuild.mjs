@@ -22,7 +22,7 @@ const onBuild = {
 const context = await esbuild.context({
 	bundle: true,
 	// entryNames: '[dir]/[name]-[hash]',
-	entryPoints: ['app/client/scripts/index.js', 'app/client/styles/main.css'],
+	entryPoints: ['app/client/scripts/index.js', 'app/client/styles/main.css', 'app/client/scripts/rod.js'],
 	// external: ['https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.7/processing.min.js'],
 	loader: {'.png': 'dataurl'},
 	minify: !devMode,

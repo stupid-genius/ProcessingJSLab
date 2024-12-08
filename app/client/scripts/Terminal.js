@@ -196,6 +196,9 @@ class Terminal extends HTMLElement{
 		case 'Enter':{
 			e.preventDefault();
 			const command = this.inputLine.textContent.trim();
+			if(command === ''){
+				return;
+			}
 			this.inputLine.textContent = '';
 			this.echo(`${this.prompt}${command}`);
 			this.processCommand(command);
